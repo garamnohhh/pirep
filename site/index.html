@@ -1,7 +1,9 @@
-<html lang="ko"><head>
+<html lang="en" data-bilingual><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pirep — 에이전트가 올린 문서를 읽는 곳</title>
+<title>pirep — read what your agents changed</title>
+<meta name="pirep:title-en" content="pirep — read what your agents changed">
+<meta name="pirep:title-ko" content="pirep — 에이전트가 올린 문서를 읽는 곳">
 <link rel="icon" href="./garamnoh-system/assets/favicon-32.png" sizes="32x32">
 <link rel="icon" href="./garamnoh-system/assets/favicon-16.png" sizes="16x16">
 <link rel="apple-touch-icon" href="./garamnoh-system/assets/icon-512.png">
@@ -67,7 +69,7 @@ img[src*="assets/"] { border: 1px solid var(--line); }
 <link rel="stylesheet" href="./garamnoh-system/tokens/fonts.css" ><link rel="stylesheet" href="./garamnoh-system/tokens/colors.css" ><link rel="stylesheet" href="./garamnoh-system/tokens/typography.css" ><link rel="stylesheet" href="./garamnoh-system/tokens/spacing.css" ><link rel="stylesheet" href="./garamnoh-system/tokens/radius.css" ><link rel="stylesheet" href="./garamnoh-system/tokens/elevation.css" ><link rel="stylesheet" href="./garamnoh-system/tokens/motion.css" ><link rel="stylesheet" href="./garamnoh-system/tokens/base.css" ><link rel="stylesheet" href="./garamnoh-system/tokens/zindex.css" ><link rel="stylesheet" href="./garamnoh-system/tokens/density.css" ><link rel="stylesheet" href="./garamnoh-system/components/layout.css" ><link rel="stylesheet" href="./garamnoh-system/components/components.css" ><link rel="stylesheet" href="./garamnoh-system/components/extended.css" ><link rel="stylesheet" href="./garamnoh-system/styles.css" ><style >
     @font-face {
       font-family: 'JetBrainsMono Nerd Font';
-      src: url('./garamnoh-system/fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');
+<span class="l-en">      src: url('../garamnoh-system/fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');</span><span class="l-ko">      src: url('./garamnoh-system/fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');</span>
       font-weight: 400; font-style: normal; font-display: swap;
     }
     :root { --font-mono: 'JetBrainsMono Nerd Font', 'JetBrains Mono', ui-monospace, monospace; }
@@ -76,7 +78,12 @@ img[src*="assets/"] { border: 1px solid var(--line); }
     @media (prefers-reduced-motion: reduce) { .mk-live { animation: none !important } }
     a { color: var(--accent-text); text-decoration: none; }
     a:hover { color: var(--text); }
-  </style></head>
+  </style><style>
+/* Both languages ship in this document. The toggle flips one attribute; no
+   navigation, so nothing about the view — scroll, focus, the lot — moves. */
+html[data-lang="ko"] .l-en, html:not([data-lang="ko"]) .l-ko { display: none; }
+</style>
+</head>
 <body>
 <div id="dc-root"><div class="sc-host" ><div  style="background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100vh;">
 
@@ -85,15 +92,15 @@ img[src*="assets/"] { border: 1px solid var(--line); }
       <span  style="font-family: var(--font-mono); font-weight: 400; font-size: 19px; letter-spacing: -0.03em; line-height: 1; position: relative; display: inline-block; padding-right: 0.36em; flex: 0 0 auto;">pirep<span  class="mk-live" style="position: absolute; top: 0px; right: 0px; width: 0.27em; height: 0.27em; background: var(--accent); animation: 1.06s steps(1) 0s infinite normal none running gn-blink;"></span></span>
 
       <div  style="flex: 1 1 0%; min-width: 0px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-        <a  href="#queue" style="font-size: 13px; color: var(--text-2); white-space: nowrap;"><span class="sc-interp">읽을 것</span></a>
-        <a  href="#local" style="font-size: 13px; color: var(--text-2); white-space: nowrap;"><span class="sc-interp">내 파일</span></a>
-        <a  href="#versions" style="font-size: 13px; color: var(--text-2); white-space: nowrap;"><span class="sc-interp">바뀐 내용</span></a>
-        <a  href="#get" style="font-size: 13px; color: var(--text-2); white-space: nowrap;"><span class="sc-interp">받기</span></a>
+        <a  href="./docs.html" style="font-size: 13px; color: var(--text-2); white-space: nowrap;"><span class="l-en">Docs</span><span class="l-ko">문서</span></a>
+        <a  href="./changelog.html" style="font-size: 13px; color: var(--text-2); white-space: nowrap;"><span class="l-en">Changelog</span><span class="l-ko">업데이트 기록</span></a>
+        <a  href="https://github.com/garamnohhh/pirep" style="font-size: 13px; color: var(--text-2); white-space: nowrap;">GitHub</a>
       </div>
+      <a  href="#get" style="height: 26px; display: flex; align-items: center; padding: 0px 12px; flex: 0 0 auto; background: var(--accent); color: var(--on-accent); font-size: 12.5px; font-weight: 500;"><span class="l-en">Install</span><span class="l-ko">설치</span></a>
 
       <div  style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;">
-        <a href="./index.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="ko" data-active>KO</a>
-        <a href="./en/index.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="en">EN</a>
+        <a href="./index.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="ko">KO</a>
+        <a href="./en/index.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="en" data-active>EN</a>
       </div>
       <div  style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;" data-gn-toggle="theme">
         <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-gn-opt-theme="light" role="tab" tabindex="0">LIGHT</span>
@@ -101,173 +108,195 @@ img[src*="assets/"] { border: 1px solid var(--line); }
       </div>
     </div>
   </div>
-
-  <div  style="border-bottom: 1px solid var(--line);">
+  <div  id="top" style="border-bottom: 1px solid var(--line);">
     <div  style="max-width: 1120px; margin: 0px auto; padding: 76px 28px;">
       <span  class="gn-label" style="color: var(--text-3);">LOCAL-FIRST READER</span>
-      <h1  style="font-size: clamp(38px, 6.4vw, 66px); line-height: 1.06; letter-spacing: -0.03em; margin: 22px 0px 0px; max-width: 16ch; white-space: pre-line;"><span class="sc-interp">에이전트가 올리고,
-내가 읽어요</span></h1>
-      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 24px 0px 0px; max-width: 54ch; text-wrap: pretty;"><span class="sc-interp">에이전트가 문서를 남기면, pirep은 지난번에 읽은 뒤로 바뀐 것만 보여줘요. 정리하라고 하지 않고, 파일은 내 컴퓨터의 마크다운으로 그대로 남아요.</span></p>
-      <div  style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 32px;">
-        <a  href="#get" style="height: 44px; background: var(--accent); color: var(--on-accent); display: flex; align-items: center; gap: 10px; padding: 0px 20px; font-size: 15px; font-weight: 500;">
-          <span  class="gn-mono" style="font-size: 15px;"><span class="sc-interp">󰇚</span></span><span class="sc-interp">macOS용 받기</span>
-        </a>
-        <a  href="#queue" style="height: 44px; border: 1px solid var(--line); background: var(--surface); color: var(--text); display: flex; align-items: center; padding: 0px 20px; font-size: 15px;"><span class="sc-interp">어떻게 동작하나요</span></a>
-        <span  class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="sc-interp">14 MB · 계정 없이 바로 써요</span></span>
-      </div>
-    </div>
-  </div>
-
-  <div  style="border-bottom: 1px solid var(--line); background: var(--bg-2);">
-    <div  style="max-width: 1120px; margin: 0px auto; padding: 48px 28px 0px;">
-      <img  class="gn-shot gn-shot-light" src="./assets/hero-reader-light.png" alt="pirep 리더 화면 — 왼쪽에 읽을 문서 목록, 가운데에 문서, 오른쪽에 목차" style="width: 100%; height: auto; border-top-color: ; border-top-style: ; border-top-width: ; border-right-color: ; border-right-style: ; border-right-width: ; border-bottom: 0px; border-left-color: ; border-left-style: ; border-left-width: ; border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; background: var(--bg);">
-      <img  class="gn-shot gn-shot-dark" src="./assets/hero-reader-dark.png" alt="pirep 리더 화면 — 왼쪽에 읽을 문서 목록, 가운데에 문서, 오른쪽에 목차" style="width: 100%; height: auto; border-top-color: ; border-top-style: ; border-top-width: ; border-right-color: ; border-right-style: ; border-right-width: ; border-bottom: 0px; border-left-color: ; border-left-style: ; border-left-width: ; border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; background: var(--bg);">
-    </div>
-  </div>
-
-  <div  id="queue" style="border-bottom: 1px solid var(--line);">
-    <div  style="max-width: 1120px; margin: 0px auto; padding: 76px 28px;">
-      <span  class="gn-label" style="color: var(--text-3);">READING QUEUE</span>
-      <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px; max-width: 24ch; text-wrap: pretty;"><span class="sc-interp">읽을 것만 위에 모여요</span></h2>
-      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px 0px 40px; max-width: 54ch; text-wrap: pretty;"><span class="sc-interp">폴더를 만들고 옮기는 일은 하지 않아도 돼요. 바뀐 문서와 아직 안 읽은 문서만 목록에 남고, 읽으면 빠져요.</span></p>
-      <div  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); border: 1px solid var(--line); background: var(--surface);">
-        
-          <div  style="padding: 26px 28px; border-right: 1px solid var(--line-soft); border-left: 3px solid var(--accent);">
-            <span  class="gn-mono" style="font-size: 18px; color: var(--accent-text);"><span class="sc-interp">▪</span></span>
-            <div  style="font-size: 17px; font-weight: 600; margin: 16px 0px 8px;"><span class="sc-interp">바뀐 문서</span></div>
-            <p  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="sc-interp">지난번에 읽은 버전과 지금 버전을 비교해서, 무엇이 달라졌는지 알려줘요.</span></p>
-          </div>
-        
-          <div  style="padding: 26px 28px; border-right: 1px solid var(--line-soft); border-left: 3px solid transparent;">
-            <span  class="gn-mono" style="font-size: 18px; color: var(--text-3);"><span class="sc-interp">▫</span></span>
-            <div  style="font-size: 17px; font-weight: 600; margin: 16px 0px 8px;"><span class="sc-interp">아직 안 읽은 문서</span></div>
-            <p  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="sc-interp">새로 생긴 문서는 읽기 전까지 목록에 남아요. 따로 표시하지 않아도 돼요.</span></p>
-          </div>
-        
-          <div  style="padding: 26px 28px; border-right: 1px solid var(--line-soft); border-left: 3px solid transparent;">
-            <span  class="gn-mono" style="font-size: 18px; color: var(--text-3);"><span class="sc-interp">·</span></span>
-            <div  style="font-size: 17px; font-weight: 600; margin: 16px 0px 8px;"><span class="sc-interp">읽으면 사라져요</span></div>
-            <p  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="sc-interp">다 읽은 문서는 목록에서 빠져요. 지우거나 옮기지 않아도 돼요.</span></p>
-          </div>
-        
-      </div>
-    </div>
-  </div>
-
-  <div  id="local" style="border-bottom: 1px solid var(--line); background: var(--bg-2);">
-    <div  style="max-width: 1120px; margin: 0px auto; padding: 76px 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 48px;">
-      <div >
-        <span  class="gn-label" style="color: var(--text-3);">LOCAL-FIRST</span>
-        <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px; max-width: 22ch; text-wrap: pretty;"><span class="sc-interp">파일은 내 컴퓨터에 있어요</span></h2>
-        <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px 0px 28px; max-width: 48ch; text-wrap: pretty;"><span class="sc-interp">pirep은 폴더를 열어서 읽어요. 파일을 서버로 보내지 않고, 형식도 바꾸지 않아요. pirep을 지워도 문서는 그대로 남아요.</span></p>
-        <div  style="display: flex; flex-direction: column; gap: 0px; border-top: 1px solid var(--line);">
-          
-            <div  style="padding: 16px 0px; border-bottom: 1px solid var(--line-soft); display: flex; gap: 14px; align-items: flex-start;">
-              <span  class="gn-mono" style="font-size: 11px; color: var(--accent-text); flex: 0 0 auto; padding-top: 3px;">✓</span>
-              <div  style="flex: 1 1 0%; min-width: 0px;">
-                <div  style="font-size: 14px; font-weight: 600; margin-bottom: 4px;"><span class="sc-interp">계정이 없어요</span></div>
-                <div  style="font-size: 13px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">가입하지 않고 바로 폴더를 열면 시작해요.</span></div>
-              </div>
-            </div>
-          
-            <div  style="padding: 16px 0px; border-bottom: 1px solid var(--line-soft); display: flex; gap: 14px; align-items: flex-start;">
-              <span  class="gn-mono" style="font-size: 11px; color: var(--accent-text); flex: 0 0 auto; padding-top: 3px;">✓</span>
-              <div  style="flex: 1 1 0%; min-width: 0px;">
-                <div  style="font-size: 14px; font-weight: 600; margin-bottom: 4px;"><span class="sc-interp">마크다운 그대로예요</span></div>
-                <div  style="font-size: 13px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">읽은 위치와 버전 기록만 따로 저장하고, 문서 자체는 건드리지 않아요.</span></div>
-              </div>
-            </div>
-          
-            <div  style="padding: 16px 0px; border-bottom: 1px solid var(--line-soft); display: flex; gap: 14px; align-items: flex-start;">
-              <span  class="gn-mono" style="font-size: 11px; color: var(--accent-text); flex: 0 0 auto; padding-top: 3px;">✓</span>
-              <div  style="flex: 1 1 0%; min-width: 0px;">
-                <div  style="font-size: 14px; font-weight: 600; margin-bottom: 4px;"><span class="sc-interp">다른 앱과 같이 써요</span></div>
-                <div  style="font-size: 13px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">같은 폴더를 편집기나 Git으로 함께 다뤄도 돼요. 바뀌면 pirep이 알려줘요.</span></div>
-              </div>
-            </div>
-          
+      <h1  style="font-size: clamp(38px, 6.4vw, 66px); line-height: 1.06; letter-spacing: -0.03em; margin: 22px 0px 0px; max-width: 16ch; white-space: pre-line;"><span class="l-en">Read what your agents</span><span class="l-ko">에이전트가 바꾼 것만</span>
+<span class="l-en">changed</span><span class="l-ko">읽어요</span></h1>
+      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 24px 0px 0px; max-width: 54ch; text-wrap: pretty;"><span class="l-en">Your agents write the documents. pirep shows only what changed since you last read them, and leaves the files where they are — plain markdown on your machine.</span><span class="l-ko">에이전트가 문서를 남기면, pirep은 지난번에 읽은 뒤로 바뀐 것만 보여줘요. 파일은 내 컴퓨터의 마크다운으로 그대로 남아요.</span></p>
+      <div  style="margin-top: 32px; max-width: 516px; border: 1px solid var(--line); background: var(--surface);">
+        <div  style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line-soft);">
+          <span  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);">TERMINAL</span>
+          <button  type="button" class="gn-mono gn-copy" data-copy="curl -fsSL https://pirep.pages.dev/install.sh | sh" data-copied="Copied" style="margin-left: auto; height: 26px; padding: 0px 12px; font-size: 11px; letter-spacing: 0.06em; border: 1px solid var(--line); background: var(--bg); color: var(--text-2); cursor: pointer;"><span class="l-en">Copy</span><span class="l-ko">복사</span></button>
+        </div>
+        <div  style="padding: 14px; overflow-x: auto;">
+          <div  class="gn-mono" style="font-size: 12.5px; line-height: 1.8; color: var(--text); white-space: pre;"><span style="color: var(--text-3);">$ </span>curl -fsSL https://pirep.pages.dev/install.sh | sh</div>
         </div>
       </div>
-      <img  class="gn-shot gn-shot-light" src="./assets/hero-files-light.png" alt="pirep — 왼쪽 파일 탭에 폴더 그대로의 마크다운 목록, 마크다운이 아닌 파일은 손대지 않은 채로" style="width: 100%; height: auto;">
-      <img  class="gn-shot gn-shot-dark" src="./assets/hero-files-dark.png" alt="pirep — 왼쪽 파일 탭에 폴더 그대로의 마크다운 목록, 마크다운이 아닌 파일은 손대지 않은 채로" style="width: 100%; height: auto;">
+      <div  style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 14px;">
+        <a  href="#get" style="font-size: 12.5px;"><span class="l-en">detail and requirements</span><span class="l-ko">자세한 조건 보기</span></a>
+        <span  class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="l-en">macOS · Apple silicon · 14 MB</span><span class="l-ko">macOS · Apple 실리콘 · 14 MB</span></span>
+      </div>
     </div>
   </div>
-
+  <div  id="screen" style="background: var(--bg-2);">
+    <div  style="max-width: 1120px; margin: 0px auto; padding: 48px 28px 0px;">
+      <img width="3024" height="1296"  class="gn-shot gn-shot-light" src="./assets/hero-reader-light.png" alt="The pirep reader — reading queue on the left, the note in the middle, its outline on the right" style="width: 100%; height: auto; border-top-color: ; border-top-style: ; border-top-width: ; border-right-color: ; border-right-style: ; border-right-width: ; border-bottom: 0px; border-left-color: ; border-left-style: ; border-left-width: ; border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; background: var(--bg);">
+      <img width="3024" height="1296"  class="gn-shot gn-shot-dark" src="./assets/hero-reader-dark.png" alt="The pirep reader — reading queue on the left, the note in the middle, its outline on the right" style="width: 100%; height: auto; border-top-color: ; border-top-style: ; border-top-width: ; border-right-color: ; border-right-style: ; border-right-width: ; border-bottom: 0px; border-left-color: ; border-left-style: ; border-left-width: ; border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; background: var(--bg);">
+    </div>
+  </div>
+  <div  id="problem" style="border-bottom: 1px solid var(--line); background: var(--bg-2);">
+    <div  style="max-width: 1120px; margin: 0px auto; padding: 76px 28px;">
+      <span  class="gn-label" style="color: var(--text-3);">THE PROBLEM</span>
+      <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px; max-width: 24ch; text-wrap: pretty;"><span class="l-en">They write faster than you read</span><span class="l-ko">쓰는 속도가 읽는 속도보다 빨라요</span></h2>
+      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px 0px 36px; max-width: 58ch; text-wrap: pretty;"><span class="l-en">An agent edits a document at three in the morning and again at lunch. By the time you open the folder, half of it has moved and nothing says which half. Opening every file to find out is the work the agent was meant to save you.</span><span class="l-ko">에이전트는 새벽 세 시에도 점심에도 문서를 고쳐요. 폴더를 열어 보면 절반이 달라져 있는데 어디가 달라졌는지는 아무도 말해 주지 않아요. 결국 다 열어 보게 되고, 그건 에이전트에게 맡긴 일이었어요.</span></p>
+      <div  style="border-top: 1px solid var(--line);">
+          <div  style="padding: 20px 0px; border-bottom: 1px solid var(--line-soft); display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 32px; align-items: baseline;">
+            <span  style="font-size: 15px; font-weight: 600; color: var(--text);"><span class="l-en">The folder grows quietly</span><span class="l-ko">폴더는 조용히 불어나요</span></span>
+            <span  style="font-size: 14px; line-height: 1.7; color: var(--text-2);"><span class="l-en">Files change while nothing asks for your attention.</span><span class="l-ko">아무 알림 없이 파일만 바뀌어 있어요.</span></span>
+          </div>
+          <div  style="padding: 20px 0px; border-bottom: 1px solid var(--line-soft); display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 32px; align-items: baseline;">
+            <span  style="font-size: 15px; font-weight: 600; color: var(--text);"><span class="l-en">Timestamps are not an answer</span><span class="l-ko">수정 시각은 답이 아니에요</span></span>
+            <span  style="font-size: 14px; line-height: 1.7; color: var(--text-2);"><span class="l-en">A newer date does not say what moved, or whether it mattered.</span><span class="l-ko">날짜가 새것이라고 무엇이 어떻게 바뀌었는지 알려 주지는 않아요.</span></span>
+          </div>
+          <div  style="padding: 20px 0px; border-bottom: 1px solid var(--line-soft); display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 32px; align-items: baseline;">
+            <span  style="font-size: 15px; font-weight: 600; color: var(--text);"><span class="l-en">Re-reading is the cost</span><span class="l-ko">결국 다시 읽게 돼요</span></span>
+            <span  style="font-size: 14px; line-height: 1.7; color: var(--text-2);"><span class="l-en">The only way to be sure is to read it all again.</span><span class="l-ko">확인할 방법이 처음부터 다시 읽는 것뿐이에요.</span></span>
+          </div>
+      </div>
+    </div>
+  </div>
   <div  id="versions" style="border-bottom: 1px solid var(--line);">
     <div  style="max-width: 1120px; margin: 0px auto; padding: 76px 28px;">
-      <span  class="gn-label" style="color: var(--text-3);">VERSION-AWARE READING</span>
-      <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px; max-width: 24ch; text-wrap: pretty;"><span class="sc-interp">무엇이 바뀌었는지 보여줘요</span></h2>
-      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px 0px 40px; max-width: 54ch; text-wrap: pretty;"><span class="sc-interp">AI가 고친 문서도, 다른 편집기에서 저장한 문서도 읽지 않은 업데이트로 쌓여요. 받아들일지 되돌릴지는 직접 고르세요.</span></p>
+      <span  class="gn-label" style="color: var(--text-3);">THE SCREEN</span>
+      <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px; max-width: 24ch; text-wrap: pretty;"><span class="l-en">Only what changed since you last read</span><span class="l-ko">지난번에 읽은 뒤로 바뀐 것만</span></h2>
+      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px 0px 40px; max-width: 54ch; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Notes edited by an AI agent, or saved from another editor, arrive as unread updates. Whether to keep or revert them is your call.</span><span class="l-ko">AI가 고친 문서도, 다른 편집기에서 저장한 문서도 읽지 않은 업데이트로 쌓여요. 받아들일지 되돌릴지는 직접 고르세요.</span></span></p>
 
-      <img  class="gn-shot gn-shot-light" src="./assets/hero-changes-light.png" alt="pirep 의 바뀐 내용 화면 — 읽은 버전과 지금 버전의 차이가 단어 단위로 표시됨" style="width: 100%; height: auto;">
-      <img  class="gn-shot gn-shot-dark" src="./assets/hero-changes-dark.png" alt="pirep 의 바뀐 내용 화면 — 읽은 버전과 지금 버전의 차이가 단어 단위로 표시됨" style="width: 100%; height: auto;">
+      <img width="3200" height="1240"  class="gn-shot gn-shot-light" src="./assets/hero-changes-light.png" alt="the pirep changes screen — word-level differences between the version you read and the current one" style="width: 100%; height: auto;">
+      <img width="3200" height="1240"  class="gn-shot gn-shot-dark" src="./assets/hero-changes-dark.png" alt="the pirep changes screen — word-level differences between the version you read and the current one" style="width: 100%; height: auto;">
 
       <div  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); border-top: 0px; border-right-color: ; border-right-style: ; border-right-width: ; border-bottom-color: ; border-bottom-style: ; border-bottom-width: ; border-left-color: ; border-left-style: ; border-left-width: ; border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; background: var(--bg);">
         
           <div  style="padding: 20px 24px; border-right: 1px solid var(--line-soft);">
             <div  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px;"><span class="sc-interp">READ VERSION</span></div>
-            <div  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">문서마다 마지막으로 읽은 버전을 기억해요.</span></div>
+            <div  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">pirep remembers the last version you read, per note.</span><span class="l-ko">문서마다 마지막으로 읽은 버전을 기억해요.</span></span></div>
           </div>
         
           <div  style="padding: 20px 24px; border-right: 1px solid var(--line-soft);">
             <div  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px;"><span class="sc-interp">DIFF</span></div>
-            <div  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">읽은 버전과 지금 버전 사이에서 바뀐 줄만 보여줘요.</span></div>
+            <div  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Only the lines that moved between that version and the current one.</span><span class="l-ko">읽은 버전과 지금 버전 사이에서 바뀐 줄만 보여줘요.</span></span></div>
           </div>
         
           <div  style="padding: 20px 24px; border-right: 1px solid var(--line-soft);">
             <div  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px;"><span class="sc-interp">YOUR CALL</span></div>
-            <div  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">반영하거나 되돌릴 때까지 목록에 남아 있어요.</span></div>
+            <div  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">The update stays in the list until you accept or dismiss it.</span><span class="l-ko">반영하거나 되돌릴 때까지 목록에 남아 있어요.</span></span></div>
           </div>
         
       </div>
     </div>
   </div>
-
-  <div  style="border-bottom: 1px solid var(--line); background: var(--bg-2);">
+  <div  id="local" style="border-bottom: 1px solid var(--line); background: var(--bg-2);">
+    <div  style="max-width: 1120px; margin: 0px auto; padding: 76px 28px;">
+      <span  class="gn-label" style="color: var(--text-3);">THE PROMISE</span>
+      <div  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 48px; align-items: start; margin-top: 8px;">
+        <div >
+          <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 0px 0px 12px; max-width: 22ch; text-wrap: pretty;"><span class="l-en">Your folder, untouched</span><span class="l-ko">폴더는 건드리지 않아요</span></h2>
+        <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px 0px 28px; max-width: 48ch; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">pirep opens a folder and reads it. Files never leave your disk and the format never changes. Remove pirep and every note is still there.</span><span class="l-ko">pirep은 폴더를 열어서 읽어요. 파일을 서버로 보내지 않고, 형식도 바꾸지 않아요. pirep을 지워도 문서는 그대로 남아요.</span></span></p>
+        <div  style="display: flex; flex-direction: column; gap: 0px; border-top: 1px solid var(--line);">
+          
+            <div  style="padding: 16px 0px; border-bottom: 1px solid var(--line-soft); display: flex; gap: 14px; align-items: flex-start;">
+              <span  class="gn-mono" style="font-size: 11px; color: var(--accent-text); flex: 0 0 auto; padding-top: 3px;">✓</span>
+              <div  style="flex: 1 1 0%; min-width: 0px;">
+                <div  style="font-size: 14px; font-weight: 600; margin-bottom: 4px;"><span class="sc-interp"><span class="l-en">No account</span><span class="l-ko">계정이 없어요</span></span></div>
+                <div  style="font-size: 13px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Open a folder and start. There is nothing to sign up for.</span><span class="l-ko">가입하지 않고 바로 폴더를 열면 시작해요.</span></span></div>
+              </div>
+            </div>
+          
+            <div  style="padding: 16px 0px; border-bottom: 1px solid var(--line-soft); display: flex; gap: 14px; align-items: flex-start;">
+              <span  class="gn-mono" style="font-size: 11px; color: var(--accent-text); flex: 0 0 auto; padding-top: 3px;">✓</span>
+              <div  style="flex: 1 1 0%; min-width: 0px;">
+                <div  style="font-size: 14px; font-weight: 600; margin-bottom: 4px;"><span class="sc-interp"><span class="l-en">Plain markdown</span><span class="l-ko">마크다운 그대로예요</span></span></div>
+                <div  style="font-size: 13px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Read position and version history live outside the folder. The documents themselves are untouched.</span><span class="l-ko">읽은 위치와 버전 기록만 따로 저장하고, 문서 자체는 건드리지 않아요.</span></span></div>
+              </div>
+            </div>
+          
+            <div  style="padding: 16px 0px; border-bottom: 1px solid var(--line-soft); display: flex; gap: 14px; align-items: flex-start;">
+              <span  class="gn-mono" style="font-size: 11px; color: var(--accent-text); flex: 0 0 auto; padding-top: 3px;">✓</span>
+              <div  style="flex: 1 1 0%; min-width: 0px;">
+                <div  style="font-size: 14px; font-weight: 600; margin-bottom: 4px;"><span class="sc-interp"><span class="l-en">Works alongside your tools</span><span class="l-ko">다른 앱과 같이 써요</span></span></div>
+                <div  style="font-size: 13px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Keep using your editor or Git on the same folder. pirep tells you when something changed.</span><span class="l-ko">같은 폴더를 편집기나 Git으로 함께 다뤄도 돼요. 바뀌면 pirep이 알려줘요.</span></span></div>
+              </div>
+            </div>
+          
+        </div>
+        </div>
+      <img width="2560" height="1760"  class="gn-shot gn-shot-light" src="./assets/hero-files-light.png" alt="pirep with the files tab open — the folder as it is on disk, markdown and everything else side by side" style="width: 100%; height: auto;">
+      <img width="2560" height="1760"  class="gn-shot gn-shot-dark" src="./assets/hero-files-dark.png" alt="pirep with the files tab open — the folder as it is on disk, markdown and everything else side by side" style="width: 100%; height: auto;">
+    </div>
+    </div>
+  </div>
+  <div  id="queue" style="border-bottom: 1px solid var(--line);">
+    <div  style="max-width: 1120px; margin: 0px auto; padding: 76px 28px;">
+      <span  class="gn-label" style="color: var(--text-3);">THE REST</span>
+      <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px; max-width: 24ch; text-wrap: pretty;"><span class="l-en">Read, then mark it read</span><span class="l-ko">읽으면 목록에서 빠져요</span></h2>
+      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px 0px 40px; max-width: 54ch; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">No folders to build, nothing to file. Changed notes and unread notes stay in the list, and reading one takes it out.</span><span class="l-ko">폴더를 만들고 옮기는 일은 하지 않아도 돼요. 바뀐 문서와 아직 안 읽은 문서만 목록에 남고, 읽으면 빠져요.</span></span></p>
+      <div  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); border: 1px solid var(--line); background: var(--surface);">
+        
+          <div  style="padding: 26px 28px; border-right: 1px solid var(--line-soft); border-left: 3px solid var(--accent);">
+            <span  class="gn-mono" style="font-size: 18px; color: var(--accent-text);"><span class="sc-interp">▪</span></span>
+            <div  style="font-size: 17px; font-weight: 600; margin: 16px 0px 8px;"><span class="sc-interp"><span class="l-en">Changed notes</span><span class="l-ko">바뀐 문서</span></span></div>
+            <p  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">pirep compares the version you read with the version on disk and shows what moved.</span><span class="l-ko">지난번에 읽은 버전과 지금 버전을 비교해서, 무엇이 달라졌는지 알려줘요.</span></span></p>
+          </div>
+        
+          <div  style="padding: 26px 28px; border-right: 1px solid var(--line-soft); border-left: 3px solid transparent;">
+            <span  class="gn-mono" style="font-size: 18px; color: var(--text-3);"><span class="sc-interp">▫</span></span>
+            <div  style="font-size: 17px; font-weight: 600; margin: 16px 0px 8px;"><span class="sc-interp"><span class="l-en">Unread notes</span><span class="l-ko">아직 안 읽은 문서</span></span></div>
+            <p  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">A new file stays in the list until you read it. Nothing to mark by hand.</span><span class="l-ko">새로 생긴 문서는 읽기 전까지 목록에 남아요. 따로 표시하지 않아도 돼요.</span></span></p>
+          </div>
+        
+          <div  style="padding: 26px 28px; border-right: 1px solid var(--line-soft); border-left: 3px solid transparent;">
+            <span  class="gn-mono" style="font-size: 18px; color: var(--text-3);"><span class="sc-interp">·</span></span>
+            <div  style="font-size: 17px; font-weight: 600; margin: 16px 0px 8px;"><span class="sc-interp"><span class="l-en">Read, and it clears</span><span class="l-ko">읽으면 사라져요</span></span></div>
+            <p  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">A note you have read leaves the list. No deleting, no archiving.</span><span class="l-ko">다 읽은 문서는 목록에서 빠져요. 지우거나 옮기지 않아도 돼요.</span></span></p>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+  <div  id="feed" style="border-bottom: 1px solid var(--line); background: var(--bg-2);">
     <div  style="max-width: 1120px; margin: 0px auto; padding: 76px 28px;">
       <span  class="gn-label" style="color: var(--text-3);">WHERE PIREP SITS</span>
-      <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 40px; max-width: 22ch; text-wrap: pretty;"><span class="sc-interp">pirep은 피드예요</span></h2>
+      <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 40px; max-width: 22ch; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">pirep is a feed</span><span class="l-ko">pirep은 피드예요</span></span></h2>
       <div  style="border: 1px solid var(--line); background: var(--bg);">
         
           <div  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 8px 20px; padding: 20px 24px; border-bottom: 1px solid var(--line-soft); align-items: baseline; border-left: 3px solid transparent; background: transparent;">
             <span  style="font-size: 15px; font-weight: 400; color: var(--text-2);"><span class="sc-interp">Notion</span></span>
             <span  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);"><span class="sc-interp">Workspace</span></span>
-            <span  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">함께 만들고 정리하는 곳이에요.</span></span>
+            <span  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Where a team builds and organises.</span><span class="l-ko">함께 만들고 정리하는 곳이에요.</span></span></span>
           </div>
         
           <div  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 8px 20px; padding: 20px 24px; border-bottom: 1px solid var(--line-soft); align-items: baseline; border-left: 3px solid transparent; background: transparent;">
             <span  style="font-size: 15px; font-weight: 400; color: var(--text-2);"><span class="sc-interp">Obsidian</span></span>
             <span  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);"><span class="sc-interp">Knowledge Base</span></span>
-            <span  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">쌓고 연결하는 곳이에요.</span></span>
+            <span  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Where notes accumulate and link.</span><span class="l-ko">쌓고 연결하는 곳이에요.</span></span></span>
           </div>
         
-          <div  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 8px 20px; padding: 20px 24px; border-bottom: 1px solid var(--line-soft); align-items: baseline; border-left: 3px solid var(--accent); background: var(--bg-2);">
+          <div  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 8px 20px; padding: 20px 24px; border-bottom: 1px solid var(--line-soft); align-items: baseline; border-left: 3px solid var(--accent); background: var(--accent-weak);">
             <span  style="font-size: 15px; font-weight: 600; color: var(--text);"><span class="sc-interp">pirep</span></span>
             <span  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-text);"><span class="sc-interp">Knowledge Feed</span></span>
-            <span  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">읽고 넘기는 곳이에요. 쌓인 문서를 정리하는 대신, 읽지 않은 것만 알려줘요.</span></span>
+            <span  style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Where you read and move on. Instead of filing what piled up, it surfaces what you have not read.</span><span class="l-ko">읽고 넘기는 곳이에요. 쌓인 문서를 정리하는 대신, 읽지 않은 것만 알려줘요.</span></span></span>
           </div>
         
       </div>
     </div>
   </div>
-
   <div  id="get" style="border-bottom: 1px solid var(--line);">
     <div  style="max-width: 1120px; margin: 0px auto; padding: 76px 28px;">
       <span  class="gn-label" style="color: var(--text-3);">INSTALL</span>
-      <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px; max-width: 20ch; text-wrap: pretty;"><span class="sc-interp">폴더 하나만 열면 시작해요</span></h2>
-      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px 0px 28px; max-width: 46ch; text-wrap: pretty;"><span class="sc-interp">설치하고 마크다운이 있는 폴더를 고르면 바로 읽을 수 있어요. 가입 절차는 없어요.</span></p>
+      <h2  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px; max-width: 20ch; text-wrap: pretty;"><span class="l-en">One line and it's installed</span><span class="l-ko">한 줄이면 설치돼요</span></h2>
+      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px 0px 28px; max-width: 46ch; text-wrap: pretty;"><span class="l-en">Paste it into a terminal. Then pick the folder your markdown is in — there is nothing else to set up.</span><span class="l-ko">터미널에 붙여 넣고, 마크다운이 있는 폴더 하나만 고르면 끝이에요. 처음에 설정할 건 없어요.</span></p>
       <div  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; align-items: start; margin-top: 4px;">
         <div >
             <div  style="border: 1px solid var(--line); background: var(--surface);">
               <div  style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line-soft);">
                 <span  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);">TERMINAL</span>
-                <button  type="button" class="gn-mono gn-copy" data-copy="curl -fsSL https://pirep.pages.dev/install.sh | sh" data-copied="복사됨" style="margin-left: auto; height: 26px; padding: 0px 12px; font-size: 11px; letter-spacing: 0.06em; border: 1px solid var(--line); background: var(--bg); color: var(--text-2); cursor: pointer;">복사</button>
+                <button  type="button" class="gn-mono gn-copy" data-copy="curl -fsSL https://pirep.pages.dev/install.sh | sh" data-copied="Copied" style="margin-left: auto; height: 26px; padding: 0px 12px; font-size: 11px; letter-spacing: 0.06em; border: 1px solid var(--line); background: var(--bg); color: var(--text-2); cursor: pointer;"><span class="l-en">Copy</span><span class="l-ko">복사</span></button>
               </div>
               <div  style="padding: 14px;">
                 <div  class="gn-mono" style="font-size: 12.5px; line-height: 1.8; color: var(--text); white-space: pre;"><span style="color: var(--text-3);">$ </span>curl -fsSL https://pirep.pages.dev/install.sh | sh</div>
               </div>
             </div>
-            <p  style="font-size: 12.5px; line-height: 1.8; color: var(--text-2); margin: 16px 0px 0px; max-width: 52ch; text-wrap: pretty;">터미널이 싫으면 <a href="https://github.com/garamnohhh/pirep/releases/latest">릴리스 페이지</a>에서 dmg를 받으세요. dmg로 받은 앱은 첫 실행 때 시스템 설정 &gt; 개인정보 보호 및 보안에서 한 번 열어 줘야 해요.</p>
+            <p  style="font-size: 12.5px; line-height: 1.8; color: var(--text-2); margin: 16px 0px 0px; max-width: 52ch; text-wrap: pretty;"><span class="l-en">If you would rather not use a terminal, take the dmg from the </span><span class="l-ko">터미널이 싫으면 </span><a href="https://github.com/garamnohhh/pirep/releases/latest"><span class="l-en">release page</span><span class="l-ko">릴리스 페이지</span></a><span class="l-en">. An app installed that way needs one pass through System Settings &gt; Privacy &amp; Security &gt; Open Anyway on its first launch.</span><span class="l-ko">에서 dmg를 받으세요. dmg로 받은 앱은 첫 실행 때 시스템 설정 &gt; 개인정보 보호 및 보안에서 한 번 열어 줘야 해요.</span></p>
         </div>
         <div  style="border: 1px solid var(--line); background: var(--surface);">
           
@@ -283,12 +312,12 @@ img[src*="assets/"] { border: 1px solid var(--line); }
           
             <div  style="display: flex; align-items: baseline; gap: 20px; padding: 14px 20px; border-bottom: 1px solid var(--line-soft);">
               <span  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); width: 104px; flex: 0 0 auto;"><span class="sc-interp">REQUIRES</span></span>
-              <span  class="gn-mono" style="flex: 1 1 0%; min-width: 0px; font-size: 12.5px; color: var(--text); text-align: right;"><span class="sc-interp">macOS · Apple 실리콘</span></span>
+              <span  class="gn-mono" style="flex: 1 1 0%; min-width: 0px; font-size: 12.5px; color: var(--text); text-align: right;"><span class="sc-interp"><span class="l-en">macOS · Apple silicon</span><span class="l-ko">macOS · Apple 실리콘</span></span></span>
             </div>
           
             <div  style="display: flex; align-items: baseline; gap: 20px; padding: 14px 20px; border-bottom: 1px solid var(--line-soft);">
               <span  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); width: 104px; flex: 0 0 auto;"><span class="sc-interp">LICENCE</span></span>
-              <span  class="gn-mono" style="flex: 1 1 0%; min-width: 0px; font-size: 12.5px; color: var(--text); text-align: right;"><span class="sc-interp">무료 · 계정 없음</span></span>
+              <span  class="gn-mono" style="flex: 1 1 0%; min-width: 0px; font-size: 12.5px; color: var(--text); text-align: right;"><span class="sc-interp"><span class="l-en">Free · no account</span><span class="l-ko">무료 · 계정 없음</span></span></span>
             </div>          
             <div  style="display: flex; align-items: baseline; gap: 20px; padding: 14px 20px; border-bottom: 1px solid var(--line-soft);">
               <span  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); width: 104px; flex: 0 0 auto;"><span class="sc-interp">SOON</span></span>
@@ -303,10 +332,12 @@ img[src*="assets/"] { border: 1px solid var(--line); }
   <div >
     <div  style="max-width: 1120px; margin: 0px auto; padding: 44px 28px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
       <span  style="font-family: var(--font-mono); font-weight: 400; font-size: 15px; letter-spacing: -0.02em; line-height: 1; position: relative; display: inline-block; padding-right: 0.36em; flex: 0 0 auto; color: var(--text-2);">pirep<span  style="position: absolute; top: 0px; right: 0px; width: 0.27em; height: 0.27em; background: var(--accent);"></span></span>
-      <span  class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="sc-interp">2026 · 전주에서 만들었어요</span></span>
+      <span  class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="sc-interp"><span class="l-en">2026 · made in Jeonju</span><span class="l-ko">2026 · 전주에서 만들었어요</span></span></span>
       <div  style="margin-left: auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
-        <a  href="./docs.html" style="font-size: 12.5px; color: var(--text-2);"><span class="sc-interp">문서</span></a>
-        <a  href="./changelog.html" style="font-size: 12.5px; color: var(--text-2);"><span class="sc-interp">업데이트 기록</span></a>
+        <a  href="./docs.html" style="font-size: 12.5px; color: var(--text-2);"><span class="sc-interp"><span class="l-en">Docs</span><span class="l-ko">문서</span></span></a>
+        <a  href="./changelog.html" style="font-size: 12.5px; color: var(--text-2);"><span class="sc-interp"><span class="l-en">Release notes</span><span class="l-ko">업데이트 기록</span></span></a>
+        <a  href="https://github.com/garamnohhh/pirep" style="font-size: 12.5px; color: var(--text-2);">GitHub</a>
+        <a  href="https://github.com/garamnohhh/pirep/blob/main/LICENSE" style="font-size: 12.5px; color: var(--text-3);"><span class="l-en">Apache 2.0 licence</span><span class="l-ko">Apache 2.0 라이선스</span></a>
       </div>
     </div>
   </div></div></div></div>
