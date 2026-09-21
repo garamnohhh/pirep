@@ -1,6 +1,6 @@
 [package]
 name = "pirep-app"
-version = "0.1.1"
+version = "0.1.2"
 description = "Local-first markdown reader"
 authors = ["garamnoh"]
 license = "Apache-2.0"
