@@ -22,7 +22,16 @@
        first visit gets English. Correct the address in place — no navigation,
        no history entry — so returning to it later reads the same. */
     l = l === "ko" || l === "en" ? l : "en";
-    if (l === "en") { try { history.replaceState(null, "", twin() + location.search + location.hash); } catch (e) {} }
+    /* Correcting the address has to wait for the parser. Every asset on this
+       page is a relative path, so rewriting the address from here would make
+       the browser resolve them against /en/ — a folder that does not hold
+       them — and the page would come up unstyled. By DOMContentLoaded every
+       URL has been resolved and the swap is safe. */
+    if (l === "en") {
+      document.addEventListener("DOMContentLoaded", function () {
+        try { history.replaceState(null, "", twin() + location.search + location.hash); } catch (e) {}
+      });
+    }
   } else if (!l) {
     /* Pages that still keep their languages in two files have a twin to walk
        to. A first visit goes to the English one. */
