@@ -7,20 +7,31 @@
   var r = document.documentElement, t, l;
   try { t = localStorage.getItem("garamnoh-system-mode"); } catch (e) {}
   try { l = localStorage.getItem("garamnoh-system-lang"); } catch (e) {}
-  var l0 = l;
   r.setAttribute("data-theme", t === "light" || t === "dark" ? t : "light");
-  l = l === "ko" || l === "en" ? l : "en";
+
+  var inEn = /(^|\/)en\//.test(location.pathname);
+  var both = r.hasAttribute("data-bilingual");
+  var twin = function () {
+    return location.pathname.replace(/[^/]*$/, "en/$&").replace(/\/en\/$/, "/en/index.html");
+  };
+
+  if (inEn) {
+    l = "en";
+  } else if (both) {
+    /* Both languages are in this page: the address says which one shows, and a
+       first visit gets English. Correct the address in place — no navigation,
+       no history entry — so returning to it later reads the same. */
+    l = l === "ko" || l === "en" ? l : "en";
+    if (l === "en") { try { history.replaceState(null, "", twin() + location.search + location.hash); } catch (e) {} }
+  } else if (!l) {
+    /* Pages that still keep their languages in two files have a twin to walk
+       to. A first visit goes to the English one. */
+    location.replace(twin() + location.search + location.hash);
+    return;
+  } else {
+    l = l === "ko" ? "ko" : "en";
+  }
+
   r.setAttribute("data-lang", l);
   r.setAttribute("lang", l === "ko" ? "ko" : "en");
-
-  /* This site keeps its two languages in two folders rather than in one page,
-     so the default cannot be an attribute. A first visit — nothing stored —
-     lands on the English twin of whatever was asked for. Choosing a language
-     in the header stores it, and nobody is moved again. */
-  var TWINS = { "/": "/en/", "/index.html": "/en/index.html",
-                "/docs": "/en/docs", "/docs.html": "/en/docs.html",
-                "/changelog": "/en/changelog", "/changelog.html": "/en/changelog.html" };
-  if (!l0 && TWINS[location.pathname]) {
-    location.replace(TWINS[location.pathname] + location.search + location.hash);
-  }
 })();

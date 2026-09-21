@@ -230,13 +230,51 @@
     document.addEventListener("DOMContentLoaded", start);
   } else start();
 
-  /* This site's languages live in two folders, so the header's language
-     control is a pair of links rather than a toggle. Remember which one was
-     followed; boot.js reads it and stops sending first-time visitors to the
-     English twin. */
+  /* The language control is a pair of links so it still works without
+     scripting and so each language has a real address. With scripting it never
+     navigates: the document carries both languages, so the click swaps one
+     attribute and rewrites the address in place. Nothing reloads, nothing
+     moves — the same deal as the theme toggle. */
   each("[data-site-lang]", function (el) {
-    el.addEventListener("click", function () {
-      try { localStorage.setItem("garamnoh-system-lang", el.getAttribute("data-site-lang")); } catch (e) {}
+    el.addEventListener("click", function (ev) {
+      var want = el.getAttribute("data-site-lang");
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button) return;
+      /* Only the pages that carry both languages can swap in place. The rest
+         still have a twin to walk to, so let the link be a link. */
+      if (!document.querySelector(".l-ko")) return;
+      ev.preventDefault();
+      /* The two languages do not set to the same height, so holding the scroll
+         offset would let the text slide under the reader. Hold the thing being
+         looked at instead: the section at the top edge keeps its place, and the
+         swap is one synchronous paint, so nothing is seen to move. */
+      var mark = null, best = -1e9;
+      each("[id]", function (sec) {
+        var top = sec.getBoundingClientRect().top;
+        if (top <= 1 && top > best) { best = top; mark = sec; }
+      });
+      setLang(want);
+      if (mark) {
+        var now = mark.getBoundingClientRect().top;
+        if (Math.round(now - best)) window.scrollBy(0, now - best);
+      }
+      /* The address is worked out from the one in the bar, not from the
+         link: after a swap the page is no longer where the link was written. */
+      var path = location.pathname.replace(/(^|\/)en\//, "$1");
+      if (want === "en") path = path.replace(/[^/]*$/, "en/$&").replace(/\/en\/$/, "/en/index.html");
+      try { history.replaceState(null, "", path + location.search + location.hash); } catch (e) {}
+      try { localStorage.setItem("garamnoh-system-lang", want); } catch (e) {}
     });
   });
+
+  function setLang(want) {
+    root.setAttribute("data-lang", want);
+    root.setAttribute("lang", want === "ko" ? "ko" : "en");
+    var m = document.querySelector('meta[name="pirep:title-' + want + '"]');
+    if (m) document.title = m.getAttribute("content");
+    each("[data-site-lang]", function (a) {
+      if (a.getAttribute("data-site-lang") === want) a.setAttribute("data-active", "");
+      else a.removeAttribute("data-active");
+    });
+  }
+  setLang(root.getAttribute("data-lang") === "ko" ? "ko" : "en");
 })();
