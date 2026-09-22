@@ -1,9 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { EditorView } from "@codemirror/view";
 import { createSourceEditor } from "../../lib/editor";
 import { slugify } from "../../lib/markdown";
 import { registerFindTarget } from "../../lib/find";
 import { formatTables } from "../../lib/table";
+import { buildLinkCompletionCandidates } from "../../lib/link-completion";
+import { useDocs, useNonMdFiles } from "../../store";
 
 // Edit-mode surface: whole doc as raw markdown, mono with a left ink rule
 // (design). Reports the heading nearest the cursor so read mode can land at the
@@ -11,17 +13,25 @@ import { formatTables } from "../../lib/table";
 export function SourceEditor({
   initialSource,
   initialCursor = 0,
+  currentDocPath,
   scrollToSlug,
   onChange,
   onCursorHeading,
 }: {
   initialSource: string;
   initialCursor?: number;
+  currentDocPath: string;
   scrollToSlug?: string | null;
   onChange: (text: string) => void;
   onCursorHeading?: (slug: string | null) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
+  const docs = useDocs();
+  const nonMdFiles = useNonMdFiles();
+  const linkCompletions = useMemo(
+    () => buildLinkCompletionCandidates(docs, nonMdFiles, currentDocPath),
+    [docs, nonMdFiles, currentDocPath],
+  );
   const cbs = useRef({ onChange, onCursorHeading });
   cbs.current = { onChange, onCursorHeading };
 
@@ -33,6 +43,7 @@ export function SourceEditor({
       cursor: initialCursor,
       onChange: (t) => cbs.current.onChange(t),
       onCursorHeading: (s) => cbs.current.onCursorHeading?.(s),
+      linkCompletions,
     });
     const unregisterFind = registerFindTarget({
       getText: () => view.state.doc.toString(),

@@ -220,6 +220,7 @@ export function DocReader() {
                 key={docId}
                 initialSource={source}
                 initialCursor={bodyOffset}
+                currentDocPath={doc.path}
                 scrollToSlug={anchorSlug.current}
                 onChange={onDraft}
                 onCursorHeading={(s) => {

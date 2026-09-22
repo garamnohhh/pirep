@@ -22,6 +22,21 @@ import {
 } from "@codemirror/commands";
 import { slugify } from "./markdown";
 import { buildTableKeymap, slashCommandKeymap, isTableRow } from "./table";
+import { autocompletion, type CompletionSource } from "@codemirror/autocomplete";
+import { matchLinkCompletion, type LinkCompletionCandidates } from "./link-completion";
+
+function linkCompletionSource(candidates: LinkCompletionCandidates): CompletionSource {
+  return (context) => {
+    const before = context.state.sliceDoc(Math.max(0, context.pos - 1000), context.pos);
+    const match = matchLinkCompletion(before, candidates);
+    if (!match || match.options.length === 0) return null;
+    return {
+      from: context.pos - match.query.length,
+      options: match.options,
+      filter: false,
+    };
+  };
+}
 
 // Combined highlight: markdown syntax visuals + code-fence token colors (CSS-var based for dark mode)
 const mdHighlight = HighlightStyle.define([
@@ -134,6 +149,7 @@ export function createSourceEditor(
     cursor?: number;
     onChange: (value: string) => void;
     onCursorHeading?: (slug: string | null) => void;
+    linkCompletions: LinkCompletionCandidates;
   },
 ): EditorView {
   // Nearest heading at/above the cursor. Backward line scan with early-exit —
@@ -160,6 +176,7 @@ export function createSourceEditor(
         drawSelection(),
         syntaxHighlighting(mdHighlight),
         lineDecoPlugin,
+        autocompletion({ override: [linkCompletionSource(opts.linkCompletions)] }),
         EditorView.lineWrapping,
         keymap.of([slashCommandKeymap, ...buildTableKeymap(), smartTab, ...defaultKeymap, ...historyKeymap]),
         EditorView.theme({
