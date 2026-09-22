@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>파일이 바뀌면 무슨 일이 생기나</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Geist:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F4F6F4;color:#101413;font-family:'Geist', 'Noto Sans KR', sans-serif;padding:40px}
+.eyebrow{font-family:'Geist Mono', 'Noto Sans KR', monospace;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#6E7A72;margin:0 0 8px}
+h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:28px;margin:0 0 24px}
+svg{max-width:1020px;width:100%;height:auto}</style></head><body>
+<p class="eyebrow">pilo</p><h1>파일이 바뀌면 무슨 일이 생기나</h1>
+<svg viewBox="4 152 1012 403" role="img" aria-labelledby="change-flow-light-title change-flow-light-desc" xmlns="http://www.w3.org/2000/svg">
+    <title id="change-flow-light-title">파일이 바뀌면 무슨 일이 생기나</title>
+    <desc id="change-flow-light-desc">A file changed outside the app, pirep keeps that version, shows a word-level diff against the version you last read, and you either mark it read or roll the file back.</desc>
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#59635C"/></marker>
+      <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0B6B4A"/></marker>
+    </defs>
+    <rect x="4" y="152" width="1012" height="403" fill="#F4F6F4"/>
+    <line x1="308" y1="215" x2="392" y2="215" stroke="#59635C" stroke-width="1.2" marker-end="url(#arrow)"/>
+    <rect x="318" y="185" width="65" height="14" rx="2" fill="#F4F6F4"/>
+    <text x="350" y="195" fill="#59635C" font-size="8" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle" letter-spacing="0.08em">CHANGES</text>
+    <line x1="628" y1="215" x2="712" y2="215" stroke="#59635C" stroke-width="1.2" marker-end="url(#arrow)"/>
+    <rect x="627" y="185" width="86" height="14" rx="2" fill="#F4F6F4"/>
+    <text x="670" y="195" fill="#59635C" font-size="8" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle" letter-spacing="0.08em">YOU DECIDE</text>
+    <path d="M 820 250 L 820 300 A 8 8 0 0 1 812 308 L 500 308 A 8 8 0 0 0 492 316 L 492 372" fill="none" stroke="#0B6B4A" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+    <rect x="560" y="294" width="120" height="14" rx="2" fill="#F4F6F4"/>
+    <text x="620" y="304" fill="#0B6B4A" font-size="8" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle" letter-spacing="0.08em">MARK READ</text>
+    <path d="M 900 250 L 900 420 A 8 8 0 0 1 892 428 L 740 428" fill="none" stroke="#59635C" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+    <rect x="760" y="406" width="120" height="14" rx="2" fill="#F4F6F4"/>
+    <text x="820" y="416" fill="#59635C" font-size="8" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle" letter-spacing="0.08em">ROLL BACK</text>
+    <rect x="80" y="180" width="228" height="72" rx="6" fill="#F4F6F4"/>
+    <rect x="80" y="180" width="228" height="72" rx="6" fill="#FFFFFF" stroke="#101413" stroke-width="1"/>
+    <rect x="88" y="188" width="54" height="12" rx="2" fill="none" stroke="#101413" stroke-opacity="0.4" stroke-width="0.8"/>
+    <text x="115" y="197" fill="#101413" fill-opacity="0.8" font-size="7" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle" letter-spacing="0.08em">OUTSIDE</text>
+    <text x="194" y="212" fill="#101413" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">파일이 바뀌어요</text>
+    <text x="194" y="230" fill="#59635C" font-size="9" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle">에이전트·스크립트·동기화</text>
+    <rect x="400" y="180" width="228" height="72" rx="6" fill="#F4F6F4"/>
+    <rect x="400" y="180" width="228" height="72" rx="6" fill="#FFFFFF" stroke="#101413" stroke-width="1"/>
+    <rect x="408" y="188" width="42" height="12" rx="2" fill="none" stroke="#101413" stroke-opacity="0.4" stroke-width="0.8"/>
+    <text x="429" y="197" fill="#101413" fill-opacity="0.8" font-size="7" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle" letter-spacing="0.08em">WATCH</text>
+    <text x="514" y="212" fill="#101413" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">그 판을 보관해요</text>
+    <text x="514" y="230" fill="#59635C" font-size="9" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle">폴더 옆 .pirep 에</text>
+    <rect x="720" y="180" width="228" height="72" rx="6" fill="#F4F6F4"/>
+    <rect x="720" y="180" width="228" height="72" rx="6" fill="#DCF2E8" stroke="#0B6B4A" stroke-width="1"/>
+    <rect x="728" y="188" width="36" height="12" rx="2" fill="none" stroke="#0B6B4A" stroke-opacity="0.4" stroke-width="0.8"/>
+    <text x="746" y="197" fill="#0B6B4A" fill-opacity="0.8" font-size="7" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle" letter-spacing="0.08em">DIFF</text>
+    <text x="834" y="212" fill="#101413" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">단어 단위로 보여줘요</text>
+    <text x="834" y="230" fill="#59635C" font-size="9" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle">읽은 판 vs 지금</text>
+    <rect x="380" y="380" width="228" height="72" rx="6" fill="#F4F6F4"/>
+    <rect x="380" y="380" width="228" height="72" rx="6" fill="#FFFFFF" stroke="#101413" stroke-width="1"/>
+    <rect x="388" y="388" width="36" height="12" rx="2" fill="none" stroke="#101413" stroke-opacity="0.4" stroke-width="0.8"/>
+    <text x="406" y="397" fill="#101413" fill-opacity="0.8" font-size="7" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle" letter-spacing="0.08em">READ</text>
+    <text x="494" y="412" fill="#101413" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">목록에서 빠져요</text>
+    <text x="494" y="430" fill="#59635C" font-size="9" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle">이 판이 읽은 판이 돼요</text>
+    <rect x="560" y="396" width="180" height="64" rx="6" fill="#F4F6F4"/>
+    <rect x="560" y="396" width="180" height="64" rx="6" fill="#FFFFFF" stroke="#101413" stroke-width="1" stroke-dasharray="4,3"/>
+    <rect x="568" y="404" width="36" height="12" rx="2" fill="none" stroke="#101413" stroke-opacity="0.4" stroke-width="0.8"/>
+    <text x="586" y="413" fill="#101413" fill-opacity="0.8" font-size="7" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle" letter-spacing="0.08em">FILE</text>
+    <text x="650" y="424" fill="#101413" font-size="12" font-weight="600" font-family="'Geist', 'Noto Sans KR', sans-serif" text-anchor="middle">파일</text>
+    <text x="650" y="442" fill="#59635C" font-size="9" font-family="'Geist Mono', 'Noto Sans KR', monospace" text-anchor="middle">되돌려 써요</text>
+    <line x1="32" y1="504" x2="988" y2="504" stroke="rgba(16,20,19,0.12)" stroke-width="0.8"/>
+    <text x="32" y="524" fill="#59635C" font-size="8" font-family="'Geist Mono', 'Noto Sans KR', monospace" letter-spacing="0.14em">LEGEND</text>
+    <line x1="132" y1="520" x2="160" y2="520" stroke="#0B6B4A" stroke-width="1.2"/>
+    <text x="168" y="524" fill="#59635C" font-size="9" font-family="'Geist', 'Noto Sans KR', sans-serif">읽음으로 표시</text>
+    <line x1="334" y1="520" x2="362" y2="520" stroke="#59635C" stroke-width="1.2" stroke-dasharray="5,4"/>
+    <text x="370" y="524" fill="#59635C" font-size="9" font-family="'Geist', 'Noto Sans KR', sans-serif">되돌리기</text>
+</svg>
+</body></html>

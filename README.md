@@ -41,7 +41,7 @@ No server, no account, no cloud. The files stay in your folder; pirep only reads
 ## Install
 
 ```sh
-curl -fsSL https://pirep.pages.dev/install.sh | sh
+curl -fsSL https://pirep.garamnoh.workers.dev/install.sh | sh
 ```
 
 This installs the latest release in `/Applications`. It requires macOS on Apple silicon and does not use `sudo`.

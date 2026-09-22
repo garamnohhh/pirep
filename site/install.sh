@@ -17,7 +17,7 @@ die() { echo "" >&2; echo "$1" >&2; exit 1; }
 # 2. The destination has to be writable without sudo.
 mkdir -p "$DEST" 2>/dev/null || true
 [ -w "$DEST" ] || die "Cannot write to $DEST. Install into your home folder instead:
-  curl -fsSL https://pirep.pages.dev/install.sh | DEST=\"\$HOME/Applications\" sh"
+  curl -fsSL https://pirep.garamnoh.workers.dev/install.sh | DEST=\"\$HOME/Applications\" sh"
 
 # 3. Say what happens to an existing copy, then do it.
 if [ -d "$APP" ]; then echo "Replacing the copy already in $DEST."; fi

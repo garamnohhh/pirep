@@ -1,0 +1,138 @@
+/* pirep — brand.css
+   The single source for this mark is the product's own identity document
+   (handoff/design/Markly Identity.dc.html); the CSS below is that spec with
+   the name swapped — the typography, the dot and its gap are unchanged, only
+   the glyph metrics that depend on the first letter move.
+
+   Measured from JetBrains Mono 400, line-height 1, in em:
+     p ink left   0.092em
+     p ink right  0.515em
+     x-height top 0.300em
+     baseline     0.860em
+     p descender  0.180em below the baseline — markly's m had none, so the
+                  small mark's box carries it instead of clipping it. */
+
+[data-product="pirep"] {
+  --product-name: "pirep";
+  /* pirep inherits the system accent. It has no reason not to. */
+}
+
+/* ---------------------------------------------------------- 1. wordmark
+   Inline, 64px and above. The dot sits in the padding, not in the text flow,
+   so it lands on the cap line rather than the baseline. */
+.pirep-wordmark {
+  font-family: var(--font-code);
+  font-weight: var(--w-regular, 400);
+  font-size: var(--product-mark-min);   /* inline floor: 15px */
+  letter-spacing: -0.02em;              /* see the ladder below */
+  line-height: 1;
+  position: relative;
+  display: inline-block;
+  padding-right: 0.36em;                /* where the dot sits */
+  color: inherit;
+}
+.pirep-wordmark > i {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0.27em;
+  height: 0.27em;
+  background: var(--product-accent);
+}
+
+/* Letter-spacing ladder — tighten as it grows, open as it shrinks.
+   44px −0.035em · 24px −0.03em · 15px −0.02em · inside a tile −0.035em fixed.
+   Total width including padding-right is 3.75em at −0.035em. */
+.pirep-wordmark--xl { font-size: 44px; letter-spacing: -0.035em; }
+.pirep-wordmark--lg { font-size: 24px; letter-spacing: -0.03em; }
+
+/* --inline — the mark used INSIDE a sentence, not as a heading. It takes the
+   sentence's own size so the line does not break rhythm, and it steps up to
+   the body ink because running copy is --text-2 and the mark would otherwise
+   sink into it. This is the one place the ladder does not decide the size;
+   it is here, in the spec, precisely so no page writes it by hand.
+   The dot sits in the right-hand padding, so a Korean particle set straight
+   after the name would touch it — 0.16em holds it off. */
+.pirep-wordmark--inline { font-size: inherit; letter-spacing: -0.02em; color: var(--text); margin-right: 0.16em; }
+
+/* The dot blinks on ONE mark per page. */
+.pirep-wordmark--live > i { animation: pirep-blink 1.06s steps(1, end) infinite; }
+@keyframes pirep-blink { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
+@media (prefers-reduced-motion: reduce) {
+  .pirep-wordmark--live > i { animation: none; }
+}
+
+/* ------------------------------------------------------------- 2. tile
+   The whole name in a square. markly was six characters; pirep is five, so
+   the same 72% content width needs a larger step: font-size = tile × 0.232.
+     512 → 118.8 · 256 → 59.4 · 128 → 29.7 · 64 → 14.85 */
+.pirep-tile {
+  width: 64px; height: 64px;
+  background: var(--text);
+  display: flex; align-items: center; justify-content: center;
+}
+.pirep-tile > .pirep-wordmark {
+  font-size: 14.85px;
+  letter-spacing: -0.035em;
+  color: var(--bg);
+  padding-right: 0.36em;
+}
+
+/* --------------------------------------------------- 3. small mark, ≤32px
+   Five letters stop reading, so only `p` and the dot remain.
+   x-height = tile / 4, i.e. font-size = tile / 2.24.
+   The dot's bottom-left corner meets the crossing of two lines: the p's
+   x-height top and its right ink edge. They touch diagonally, gap zero.
+   The box also carries p's descender, which m did not have.
+   Dot size snaps to whole pixels with a 2px floor — in em it lands on half
+   pixels (5.2 at 32, 2.5 at 16) and smears. */
+.pirep-mark {
+  /* --dot is the whole scale knob: the box, the letter's offset and the dot
+     all read it, so the mark can be drawn at any size without drifting. It
+     stays in whole pixels — in em it lands on half pixels and smears. */
+  --dot: 3px;
+  position: relative; display: block;
+  font-size: 14.29px;                        /* 32 / 2.24 */
+  width: calc(0.423em + var(--dot));
+  height: calc(0.740em + var(--dot));        /* x-height + descender */
+}
+.pirep-mark > b {
+  position: absolute;
+  left: -0.092em;
+  top: calc(var(--dot) - 0.302em);
+  font-family: var(--font-code); font-weight: var(--w-regular, 400);
+  font-size: 1em; line-height: 1;
+  color: var(--bg);
+}
+.pirep-mark > i {
+  position: absolute;
+  left: 0.423em;                             /* the p's right ink edge */
+  top: 0;
+  width: var(--dot); height: var(--dot);
+  background: var(--product-accent);
+}
+.pirep-mark--16 { --dot: 2px; font-size: 7.14px; }
+
+/* --------------------------------------------------------------- 4. never
+   - Not capitalised. `Pirep` and `PIREP` are both wrong.
+   - Not set in another face.
+   - The dot is never a circle. Square only.
+   - The dot is never a colour other than the accent.
+   - No italics, no weight change.
+   - No shadow, gradient or rounded corner.
+   - Nothing between the name and the dot.
+   - The tile's clear space is never reduced to fill it.
+   - 웹에서는 규격 클래스로만 쓴다. 숫자를 인라인 style 에 옮겨 적지 않는다 — 옮겨 적는 순간
+     규격과 갈라진다. tools/check-marks.sh 가 그런 자리를 찾아낸다.
+   - CSS 를 못 쓰는 자리(README·OG 이미지·프레스킷·인쇄)에서만 assets/wordmarks/ 의 배포용
+     파일을 쓴다. 그 파일도 규격에서 만든 것이고, 손으로 다시 그리지 않는다.
+
+   ---------------------------------------------------- 5. how to make a raster
+   The mark is never redrawn for a new size. Draw THIS spec once at a large
+   scale — scale `font-size` and `--dot` by the same factor, nothing else —
+   then crop to the ink and resample down. Only the space around the mark may
+   change between a dock icon and a browser tab; the letter, the dot and the
+   gap between them are fixed ratios and stay put.
+   Favicons (2026-09-18): drawn at 32x, cropped to the ink, ink height set to
+   56% of the square so it carries the same weight as the garamnoh mark beside
+   it in a tab strip. dot / letter-height = 0.286, the same as the 512 tile. */

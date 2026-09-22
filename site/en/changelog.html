@@ -1,7 +1,9 @@
-<html lang="en"><head>
+<html lang="en" data-bilingual><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Changelog — pirep</title>
+<meta name="pirep:title-en" content="Changelog — pirep">
+<meta name="pirep:title-ko" content="변경 기록 — pirep">
 <link rel="icon" href="../garamnoh-system/assets/favicon-32.png" sizes="32x32">
 <link rel="icon" href="../garamnoh-system/assets/favicon-16.png" sizes="16x16">
 <link rel="apple-touch-icon" href="../garamnoh-system/assets/icon-512.png">
@@ -64,10 +66,10 @@ img[src*="assets/"] { border: 1px solid var(--line); }
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>x-dc{display:none!important}</style>
-<link rel="stylesheet" href="../garamnoh-system/tokens/fonts.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/colors.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/typography.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/spacing.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/radius.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/elevation.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/motion.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/base.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/zindex.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/density.css" ><link rel="stylesheet" href="../garamnoh-system/components/layout.css" ><link rel="stylesheet" href="../garamnoh-system/components/components.css" ><link rel="stylesheet" href="../garamnoh-system/components/extended.css" ><link rel="stylesheet" href="../garamnoh-system/styles.css" ><style >
+<link rel="stylesheet" href="../garamnoh-system/tokens/fonts.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/colors.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/typography.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/spacing.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/radius.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/elevation.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/motion.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/base.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/zindex.css" ><link rel="stylesheet" href="../garamnoh-system/tokens/density.css" ><link rel="stylesheet" href="../garamnoh-system/components/layout.css" ><link rel="stylesheet" href="../garamnoh-system/components/components.css" ><link rel="stylesheet" href="../garamnoh-system/components/extended.css" ><link rel="stylesheet" href="../garamnoh-system/styles.css" ><link rel="stylesheet" href="/garamnoh-system/products/pirep/brand.css"><style >
     @font-face {
       font-family: 'JetBrainsMono Nerd Font';
-      src: url('../garamnoh-system/fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');
+<span class="l-en">      src: url('../garamnoh-system/fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');</span><span class="l-ko">      src: url('./garamnoh-system/fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');</span>
       font-weight: 400; font-style: normal; font-display: swap;
     }
     :root { --font-mono: 'JetBrainsMono Nerd Font', 'JetBrains Mono', ui-monospace, monospace; }
@@ -75,17 +77,23 @@ img[src*="assets/"] { border: 1px solid var(--line); }
     @keyframes gn-blink { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
     @media (prefers-reduced-motion: reduce) { .mk-live { animation: none !important } }
     a { color: var(--accent-text); text-decoration: none; }
-    a:hover { color: var(--text); }
-  </style></head>
+    a:hover { color: var(--accent); }
+  </style><style>
+html[data-lang="ko"] .l-en, html:not([data-lang="ko"]) .l-ko { display: none; }
+</style>
+</head>
 <body>
 <div id="dc-root"><div class="sc-host" ><div  style="background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100vh;">
 
   <div  style="position: sticky; top: 0px; z-index: 60; background: var(--bg); border-bottom: 1px solid var(--line);">
     <div  style="max-width: 1120px; margin: 0px auto; padding: 8px 28px; min-height: 54px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-      <a  href="./index.html" style="font-family: var(--font-mono); font-weight: 400; font-size: 19px; letter-spacing: -0.03em; line-height: 1; position: relative; display: inline-block; padding-right: 0.36em; flex: 0 0 auto; color: var(--text);">pirep<span  class="mk-live" style="position: absolute; top: 0px; right: 0px; width: 0.27em; height: 0.27em; background: var(--accent); animation: 1.06s steps(1) 0s infinite normal none running gn-blink;"></span></a>
-      <div  style="flex: 1 1 0%; min-width: 0px; display: flex; align-items: center; gap: 10px;">
-        <span  class="gn-mono" style="font-size: 11px; color: var(--text-3); flex: 0 0 auto;">›</span>
-        <span  style="font-size: 13px; color: var(--text); font-weight: 600; white-space: nowrap;"><span class="sc-interp">Release notes</span></span>
+      <a  href="./index.html" class="pirep-wordmark pirep-wordmark--lg" data-product="pirep" style="flex: 0 0 auto;">pirep<i></i></a>
+      <div  style="flex: 1 1 0%; min-width: 0px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <a href="./docs.html#getting-started" class="gn-navlink" style="font-size: 13px; white-space: nowrap;"><span class="l-en">Getting started</span><span class="l-ko">시작하기</span></a>
+        <a  href="./docs.html" class="gn-navlink" style="font-size: 13px; white-space: nowrap;"><span class="l-en">Docs</span><span class="l-ko">문서</span></a>
+        <a  href="./changelog.html" class="gn-navlink" style="font-size: 13px; white-space: nowrap;"><span class="l-en">Changelog</span><span class="l-ko">업데이트 기록</span></a>
+        <span  class="gn-sep"></span>
+        <a  href="https://github.com/garamnohhh/pirep" style="font-size: 13px; color: var(--text-3); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;"><span  style="display: inline-flex; align-items: center; gap: 6px;"><svg viewBox="0 0 16 16" width="15" height="15" role="img" aria-label="GitHub" focusable="false" style="fill: currentColor; display: block;"><title>GitHub</title><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></span></a>
       </div>
       <div  style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;">
         <a href="../changelog.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="ko">KO</a>
@@ -101,8 +109,8 @@ img[src*="assets/"] { border: 1px solid var(--line); }
   <div  style="max-width: 1120px; margin: 0px auto; padding: 0px 28px;">
     <div  style="padding: 56px 0px 40px; border-bottom: 1px solid var(--line);">
       <span  class="gn-label" style="color: var(--text-3);">CHANGELOG</span>
-      <h1  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px;"><span class="sc-interp">What changed, by version</span></h1>
-      <p  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px; max-width: 54ch; text-wrap: pretty;"><span class="sc-interp">Also available in the app under Settings › About.</span></p>
+      <h1  style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px;"><span class="sc-interp"><span class="l-en">What changed, by version</span><span class="l-ko">버전마다 바뀐 것</span></span></h1>
+      <p class="gn-lead"  style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Also available in the app under Settings › About.</span><span class="l-ko">앱에서도 설정 → 정보에서 볼 수 있어요.</span></span></p>
     </div>
 
     <div  style="max-width: 760px; padding: 44px 0px 76px; display: flex; flex-direction: column; gap: 48px;">
@@ -114,7 +122,7 @@ img[src*="assets/"] { border: 1px solid var(--line); }
             <span  class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="sc-interp">2026.09.18</span></span>
             <span  style="display: inline-block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; color: var(--accent-text); border: 1px solid var(--accent-text); padding: 1px 5px;"><span class="sc-interp">LATEST</span></span>
           </div>
-          <p  style="font-size: 15px; line-height: 1.8; color: var(--text-2); margin: 0px 0px 24px; text-wrap: pretty;"><span class="sc-interp">The reading queue and the changes view were rebuilt. Files are now sorted into three tiers by what pirep can do with them, and the whole interface was reset around the light theme.</span></p>
+          <p  style="font-size: 15px; line-height: 1.8; color: var(--text-2); margin: 0px 0px 24px; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">The reading queue and the changes view were rebuilt. Files are now sorted into three tiers by what pirep can do with them, and the whole interface was reset around the light theme.</span><span class="l-ko">읽을 것 목록과 바뀐 내용을 보는 화면을 새로 짰어요. 파일 종류를 세 단계로 구분하고, 화면 전체를 라이트 테마 기준으로 다시 맞췄어요.</span></span></p>
 
           
             <div  style="border-top: 1px solid var(--line); padding: 18px 0px 4px;">
@@ -123,32 +131,32 @@ img[src*="assets/"] { border: 1px solid var(--line); }
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--accent-text); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">+</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Knowledge Inbox — today’s date alongside changed notes and notes you have not read yet, on one screen.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Knowledge Inbox — today’s date alongside changed notes and notes you have not read yet, on one screen.</span><span class="l-ko">Knowledge Inbox — 오늘 날짜와 함께 바뀐 문서, 아직 안 읽은 문서를 한 화면에 모아요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--accent-text); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">+</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Review changes (⌘U) — accept or dismiss updates across several notes in one pass.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Review changes (⌘U) — accept or dismiss updates across several notes in one pass.</span><span class="l-ko">바뀐 내용 모아 보기(⌘U) — 여러 문서의 업데이트를 한꺼번에 반영하거나 되돌려요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--accent-text); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">+</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">File type chips — markdown, files the app can display, and files it cannot open are told apart by colour.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">File type chips — markdown, files the app can display, and files it cannot open are told apart by colour.</span><span class="l-ko">파일 종류 칩 — 마크다운, 앱에서 볼 수 있는 파일, 열 수 없는 파일을 색으로 구분해요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--accent-text); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">+</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">HTML · PDF · CSV · image viewers — non-markdown files now open inside the app.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">HTML · PDF · CSV · image viewers — non-markdown files now open inside the app.</span><span class="l-ko">HTML · PDF · CSV · 이미지 뷰어 — 마크다운이 아닌 파일도 앱 안에서 열려요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--accent-text); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">+</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Tag results and Rabbit Hole — gather notes by tag, and keep the trail of what you read next.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Tag results and Rabbit Hole — gather notes by tag, and keep the trail of what you read next.</span><span class="l-ko">태그 목록과 Rabbit Hole — 태그로 문서를 모아 보고, 이어 읽은 길을 남겨요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--accent-text); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">+</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Eight settings tabs — Editor, Version history, Templates and Account are now separate.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Eight settings tabs — Editor, Version history, Templates and Account are now separate.</span><span class="l-ko">설정 탭 여덟 개 — 편집기, 버전 기록, 템플릿, 계정을 각각 나눴어요.</span></span></span>
                   </div>
                 
               </div>
@@ -160,32 +168,32 @@ img[src*="assets/"] { border: 1px solid var(--line); }
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">·</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Light is now the default theme. Dark is chosen in Settings › Appearance.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Light is now the default theme. Dark is chosen in Settings › Appearance.</span><span class="l-ko">라이트 테마가 기본이 됐어요. 다크는 설정 → Appearance에서 골라요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">·</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">The sidebar can be resized by dragging its edge.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">The sidebar can be resized by dragging its edge.</span><span class="l-ko">사이드바 폭을 끌어서 조절할 수 있어요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">·</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">The note path moved to the centre of the title bar. Clicking a folder name jumps to that folder.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">The note path moved to the centre of the title bar. Clicking a folder name jumps to that folder.</span><span class="l-ko">문서 경로를 창 위쪽 가운데로 옮겼어요. 폴더 이름을 누르면 그 폴더로 넘어가요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">·</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Search moved to the top of the sidebar.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Search moved to the top of the sidebar.</span><span class="l-ko">검색을 사이드바 맨 위로 옮겼어요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">·</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">⌘R still opens Related Topics. Mark as read is now ⌘⇧R and mark all read is ⌘⌥R.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">⌘R still opens Related Topics. Mark as read is now ⌘⇧R and mark all read is ⌘⌥R.</span><span class="l-ko">⌘R은 Related Topics 그대로예요. 읽음으로 표시는 ⌘⇧R, 모두 읽음은 ⌘⌥R로 바뀌었어요.</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">·</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">The interface is English only for now. Korean is on the way.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">The interface is English only for now. Korean is on the way.</span><span class="l-ko">화면 언어는 지금 영어만 있어요. 한국어는 준비 중이에요.</span></span></span>
                   </div>
                 
               </div>
@@ -197,7 +205,7 @@ img[src*="assets/"] { border: 1px solid var(--line); }
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">·</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Some edits were missed when saves arrived in bursts. pirep now waits 0.4s and records once.</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Some edits were missed when saves arrived in bursts. pirep now waits 0.4s and records once.</span><span class="l-ko">파일이 몰려 저장될 때 일부 변경을 놓치던 문제를 고쳤어요. 0.4초 기다렸다가 한 번만 기록해요.</span></span></span>
                   </div>
                 
               </div>
@@ -209,27 +217,27 @@ img[src*="assets/"] { border: 1px solid var(--line); }
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">▫</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Presenting HTML and PDF as slides</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Presenting HTML and PDF as slides</span><span class="l-ko">HTML · PDF를 슬라이드로 보는 화면</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">▫</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Editing a single line as raw markdown</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Editing a single line as raw markdown</span><span class="l-ko">한 줄만 원본 마크다운으로 고치기</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">▫</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Handling the case where the app and another editor changed the same line</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Handling the case where the app and another editor changed the same line</span><span class="l-ko">앱과 다른 편집기가 같은 줄을 고쳤을 때 처리</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">▫</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">PDF page navigation</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">PDF page navigation</span><span class="l-ko">PDF 쪽 이동</span></span></span>
                   </div>
                 
                   <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;">
                     <span  class="gn-mono" style="font-size: 10px; color: var(--text-3); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">▫</span></span>
-                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp">Windows and Linux builds</span></span>
+                    <span  style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Windows and Linux builds</span><span class="l-ko">Windows · Linux 빌드</span></span></span>
                   </div>
                 
               </div>
@@ -239,23 +247,27 @@ img[src*="assets/"] { border: 1px solid var(--line); }
       
 
       <div  style="border-top-color: ; border-top-style: ; border-top-width: ; border-right-color: ; border-right-style: ; border-right-width: ; border-bottom-color: ; border-bottom-style: ; border-bottom-width: ; border-left: 3px solid var(--text-3); border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; background: var(--surface); padding: 20px 22px;">
-        <div  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; color: var(--text-3); margin-bottom: 12px;"><span class="sc-interp">Earlier versions</span></div>
-        <p  style="font-size: 14px; line-height: 1.75; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="sc-interp">Entries before 0.1.0 have not been written up yet.</span></p>
+        <div  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; color: var(--text-3); margin-bottom: 12px;"><span class="sc-interp"><span class="l-en">Earlier versions</span><span class="l-ko">이전 버전</span></span></div>
+        <p  style="font-size: 14px; line-height: 1.75; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">Entries before 0.1.0 have not been written up yet.</span><span class="l-ko">0.1.0 이전 기록은 아직 정리하지 않았어요.</span></span></p>
       </div>
 
     </div>
   </div>
 
-  <div  style="border-top: 1px solid var(--line);">
-    <div  style="max-width: 1120px; margin: 0px auto; padding: 44px 28px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-      <a  href="./index.html" style="font-family: var(--font-mono); font-weight: 400; font-size: 15px; letter-spacing: -0.02em; line-height: 1; position: relative; display: inline-block; padding-right: 0.36em; flex: 0 0 auto; color: var(--text-2);">pirep<span  style="position: absolute; top: 0px; right: 0px; width: 0.27em; height: 0.27em; background: var(--accent);"></span></a>
-      <span  class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="sc-interp">2026 · made in Jeonju</span></span>
-      <div  style="margin-left: auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
-        <a  href="./index.html#get" style="font-size: 12.5px; color: var(--text-2);"><span class="sc-interp">Download</span></a>
-        <a  href="./docs.html" style="font-size: 12.5px; color: var(--text-2);"><span class="sc-interp">Docs</span></a>
-        <a  href="./changelog.html" style="font-size: 12.5px; color: var(--text-2);"><span class="sc-interp">Release notes</span></a>
+  <!-- gn-footer:start -->
+  <div style="border-top: 1px solid var(--line);">
+    <div style="max-width: 1120px; margin: 0px auto; padding: 44px 28px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+      <a href="./index.html" class="pirep-wordmark" data-product="pirep" style="color: var(--text-2);">pirep<i></i></a>
+      <span class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="l-en">2026 · made in Jeonju</span><span class="l-ko">2026 · 전주에서 만들었어요</span></span>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+        <a href="./index.html#get" style="font-size: 12.5px;" class="gn-navlink"><span class="l-en">Download</span><span class="l-ko">받기</span></a>
+        <a href="./docs.html" style="font-size: 12.5px;" class="gn-navlink"><span class="l-en">Docs</span><span class="l-ko">문서</span></a>
+        <a href="./changelog.html" style="font-size: 12.5px;" class="gn-navlink"><span class="l-en">Release notes</span><span class="l-ko">업데이트 기록</span></a>
+        <a href="https://github.com/garamnohhh/pirep" style="font-size: 12.5px;" class="gn-navlink"><span style="display: inline-flex; align-items: center; gap: 6px;"><svg viewBox="0 0 16 16" width="15" height="15" role="img" aria-label="GitHub" focusable="false" style="fill: currentColor; display: block;"><title>GitHub</title><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></span></a>
+        <a href="https://github.com/garamnohhh/pirep/blob/main/LICENSE" style="font-size: 12.5px;" class="gn-crumb-link"><span class="l-en">Apache 2.0 licence</span><span class="l-ko">Apache 2.0 라이선스</span></a>
       </div>
     </div>
-  </div></div></div></div>
+  </div>
+<!-- gn-footer:end --></div></div></div>
 <script src="../garamnoh-system/deploy.js"></script>
 </body></html>
