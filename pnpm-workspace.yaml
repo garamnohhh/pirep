@@ -1,2 +1,7 @@
+# Single package: the app itself. pnpm 10 refuses a workspace file without
+# this list, which is what broke the Cloudflare build.
+packages:
+  - "."
+
 allowBuilds:
   esbuild: true
