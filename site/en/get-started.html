@@ -1,0 +1,135 @@
+<html lang="en" data-bilingual><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting started — pirep</title>
+<meta name="pirep:title-en" content="Getting started — pirep">
+<meta name="pirep:title-ko" content="시작하기 — pirep">
+<link rel="icon" href="/garamnoh-system/assets/favicon-32.png" sizes="32x32">
+<link rel="icon" href="/garamnoh-system/assets/favicon-16.png" sizes="16x16">
+<link rel="apple-touch-icon" href="/garamnoh-system/assets/icon-512.png">
+<script src="/garamnoh-system/boot.js?v=3"></script>
+<link rel="stylesheet" href="/garamnoh-system/tokens/fonts.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/colors.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/typography.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/spacing.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/radius.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/elevation.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/motion.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/base.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/zindex.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/density.css">
+<link rel="stylesheet" href="/garamnoh-system/components/layout.css">
+<link rel="stylesheet" href="/garamnoh-system/components/components.css">
+<link rel="stylesheet" href="/garamnoh-system/components/extended.css">
+<link rel="stylesheet" href="/garamnoh-system/styles.css">
+<link rel="stylesheet" href="/garamnoh-system/products/pirep/brand.css">
+<link rel="stylesheet" href="/garamnoh-system/tokens/print.css">
+<style>
+@font-face {
+  font-family: 'JetBrainsMono Nerd Font';
+  src: url('/garamnoh-system/fonts/JetBrainsMonoNerdFont-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+:root { --font-mono: 'JetBrainsMono Nerd Font', 'JetBrains Mono', ui-monospace, monospace; }
+.gn-mono, .gn-label, .gn-kbd, .gn-code { font-family: var(--font-mono); }
+html[data-lang="ko"] .l-en, html:not([data-lang="ko"]) .l-ko { display: none; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); }
+a { color: var(--accent-text); text-decoration: none; }
+a:hover { color: var(--accent); }
+[data-gn-opt-theme], [data-site-lang] { background: transparent; color: var(--text-3); font-weight: 400; }
+[data-gn-opt-theme][aria-selected="true"], [data-site-lang][data-active] { background: var(--bg-2); color: var(--accent-text); font-weight: 600; }
+[data-site-lang] { text-decoration: none; }
+img[src*="/assets/"] { border: 1px solid var(--line); }
+</style>
+</head><body>
+<div style="background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100vh;">
+
+  <div style="position: sticky; top: 0px; z-index: 60; background: var(--bg); border-bottom: 1px solid var(--line);">
+    <div style="max-width: 1120px; margin: 0px auto; padding: 8px 28px; min-height: 54px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+      <a href="../index.html" class="pirep-wordmark pirep-wordmark--lg" data-product="pirep" style="flex: 0 0 auto; text-decoration: none; color: inherit;">pirep<i></i></a>
+      <div style="flex: 1 1 0%; min-width: 0px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <a href="../get-started.html" class="gn-navlink" style="font-size: 13px; white-space: nowrap;" aria-current="page"><span class="l-en">Getting started</span><span class="l-ko">시작하기</span></a>
+        <a href="../docs.html" class="gn-navlink" style="font-size: 13px; white-space: nowrap;"><span class="l-en">Docs</span><span class="l-ko">문서</span></a>
+        <a href="../changelog.html" class="gn-navlink" style="font-size: 13px; white-space: nowrap;"><span class="l-en">Changelog</span><span class="l-ko">업데이트 기록</span></a>
+        <span class="gn-sep"></span>
+        <a href="https://github.com/garamnohhh/pirep" style="font-size: 13px; color: var(--text-3); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;"><span style="display: inline-flex; align-items: center; gap: 6px;"><svg viewBox="0 0 16 16" width="15" height="15" role="img" aria-label="GitHub" focusable="false" style="fill: currentColor; display: block;"><title>GitHub</title><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></span></a>
+      </div>
+      <a href="./index.html#get" style="height: 26px; display: flex; align-items: center; padding: 0px 12px; flex: 0 0 auto; background: var(--accent); color: var(--on-accent); font-size: 12.5px; font-weight: 500;"><span class="l-en">Download</span><span class="l-ko">받기</span></a>
+      <div style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;">
+        <a href="../get-started.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="ko">KO</a>
+        <a href="./get-started.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="en" data-active>EN</a>
+      </div>
+      <div style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;" data-gn-toggle="theme">
+        <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-gn-opt-theme="light" role="tab" tabindex="0">LIGHT</span>
+        <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-gn-opt-theme="dark" role="tab" tabindex="0">DARK</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width: 1120px; margin: 0px auto; padding: 0px 28px;">
+    <div style="padding: 56px 0px 40px; border-bottom: 1px solid var(--line);">
+      <span class="gn-label" style="color: var(--text-3);">GETTING STARTED</span>
+      <h1 style="font-size: 34px; letter-spacing: -0.02em; margin: 16px 0px 12px;"><span class="l-en">Getting started</span><span class="l-ko">시작하기</span></h1>
+      <p class="gn-lead" style="font-size: 15px; line-height: 1.78; color: var(--text-2); margin: 0px; text-wrap: pretty;"><span class="l-en">Installed to your first diff, in four steps.</span><span class="l-ko">설치부터 첫 비교까지, 네 단계예요.</span></p>
+    </div>
+    <!-- 옆에 붙는 목차가 없다. 본문이 칸을 그대로 쓴다. -->
+    <div style="padding: 40px 0px 76px; display: flex; flex-direction: column; gap: 22px;">
+<p style="font-size: 15px; line-height: 1.8; color: var(--text-2); margin: 0px 0px 22px; text-wrap: pretty;"><span class="l-en">Installed to your first diff. Each step says which screen you are on before it says what to do, and ends with what you should see. Numbered steps are the ones everybody walks.</span><span class="l-ko">설치부터 첫 비교까지예요. 단계마다 <b>지금 어느 화면인지</b>가 먼저 나오고, 그다음이 거기서 할 것, 마지막이 무엇이 보이면 넘어가도 되는지예요. 번호가 붙은 것은 모두가 순서대로 밟는 것이에요.</span></p>
+<img class="gn-shot gn-shot-light l-en" width="952" height="259" src="/assets/diagrams/pirep-screens-en-light.png" alt="One line installs it, open shows the screen that asks for a folder, and picking one lands you in the Knowledge Inbox" style="width: 100%; height: auto; margin-top: 8px;">
+<img class="gn-shot gn-shot-light l-ko" width="952" height="259" src="/assets/diagrams/pirep-screens-ko-light.png" alt="한 줄로 설치하고 열면 폴더를 묻는 첫 화면이 뜨고, 폴더를 고르면 Knowledge Inbox 로 간다" style="width: 100%; height: auto; margin-top: 8px;">
+<img class="gn-shot gn-shot-dark l-en" width="952" height="259" src="/assets/diagrams/pirep-screens-en-dark.png" alt="One line installs it, open shows the screen that asks for a folder, and picking one lands you in the Knowledge Inbox" style="width: 100%; height: auto; margin-top: 8px;">
+<img class="gn-shot gn-shot-dark l-ko" width="952" height="259" src="/assets/diagrams/pirep-screens-ko-dark.png" alt="한 줄로 설치하고 열면 폴더를 묻는 첫 화면이 뜨고, 폴더를 고르면 Knowledge Inbox 로 간다" style="width: 100%; height: auto; margin-top: 8px;">
+<p class="gn-mono" style="font-size: 11px; color: var(--text-3); margin: 12px 0px 0px; white-space: normal;"><span class="l-en">three screens, and no security prompt on this route</span><span class="l-ko">지나가는 화면은 셋이고, 이 길에는 보안 경고가 없어요</span></p>
+<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 26px;">
+<div style="border: 1px solid var(--line); background: var(--surface);"><div style="display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap;"><span class="gn-mono" style="font-size: 12px; color: var(--accent-text); flex: 0 0 auto;">01</span><span class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid var(--accent-text); color: var(--accent-text); padding: 3px 7px; flex: 0 0 auto;"><span class="l-en">terminal</span><span class="l-ko">터미널</span></span><span style="font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;"><span class="l-en">Install</span><span class="l-ko">설치</span></span></div><div style="padding: 16px 18px 18px 46px; display: flex; flex-direction: column; gap: 12px;"><div style="display: flex; flex-direction: column; gap: 14px;"><div style="border: 1px solid var(--line); background: var(--surface);"><div style="padding: 10px 14px; border-bottom: 1px solid var(--line-soft);"><span class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);">TERMINAL</span></div><div style="padding: 14px; overflow-x: auto;"><div class="gn-mono" style="font-size: 12.5px; line-height: 1.9; color: var(--text); white-space: pre;"><span style="color: var(--text-3);">$ </span>curl -fsSL https://pirep.garamnoh.workers.dev/install.sh | sh</div></div></div>
+<div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">Installs the latest release in /Applications. No sudo, and it prints how to open it when it is done.</span><span class="l-ko">최신 릴리스를 /Applications 에 넣어요. sudo 안 쓰고, 끝나면 여는 법까지 알려줘요.</span></div>
+<div style="border: 1px solid var(--line); background: var(--surface);"><div style="padding: 10px 14px; border-bottom: 1px solid var(--line-soft);"><span class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);">WHAT IT PRINTS</span></div><div style="padding: 14px; overflow-x: auto;"><div class="gn-mono" style="font-size: 12.5px; line-height: 1.9; color: var(--text); white-space: pre;">Installed → /Applications/pirep.app
+Open it:   open -a pirep
+Remove it: rm -rf /Applications/pirep.app</div></div></div>
+<div style="border-left: 2px solid var(--accent); padding: 2px 0px 2px 13px;"><div class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-text);"><span class="l-en">you are through when</span><span class="l-ko">되면</span></div><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin-top: 3px;"><span class="l-en">pirep is in /Applications and the three lines above are on screen.</span><span class="l-ko">/Applications 에 pirep 이 생기고 위 세 줄이 찍혀요.</span></div></div>
+<div style="border-top: 1px dashed var(--line); padding-top: 11px; display: flex; flex-direction: column; gap: 9px;"><div class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);"><span class="l-en">if /Applications is not writable</span><span class="l-ko">/Applications 에 못 쓸 때</span></div><div style="display: flex; flex-direction: column; gap: 14px;"><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">The installer tells you how to put it in your home folder instead.</span><span class="l-ko">설치 스크립트가 집 폴더로 넣는 방법을 알려줘요.</span></div>
+<div style="border: 1px solid var(--line); background: var(--surface);"><div style="padding: 10px 14px; border-bottom: 1px solid var(--line-soft);"><span class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);">TERMINAL</span></div><div style="padding: 14px; overflow-x: auto;"><div class="gn-mono" style="font-size: 12.5px; line-height: 1.9; color: var(--text); white-space: pre;"><span style="color: var(--text-3);">$ </span>curl -fsSL https://pirep.garamnoh.workers.dev/install.sh | DEST="$HOME/Applications" sh</div></div></div></div></div></div></div></div>
+<div style="border: 1px solid var(--line); background: var(--surface);"><div style="display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap;"><span class="gn-mono" style="font-size: 12px; color: var(--accent-text); flex: 0 0 auto;">02</span><span class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid var(--accent-text); color: var(--accent-text); padding: 3px 7px; flex: 0 0 auto;"><span class="l-en">terminal → pirep</span><span class="l-ko">터미널 → pirep</span></span><span style="font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;"><span class="l-en">Open it</span><span class="l-ko">열기</span></span></div><div style="padding: 16px 18px 18px 46px; display: flex; flex-direction: column; gap: 12px;"><div style="display: flex; flex-direction: column; gap: 14px;"><div style="border: 1px solid var(--line); background: var(--surface);"><div style="padding: 10px 14px; border-bottom: 1px solid var(--line-soft);"><span class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);">TERMINAL</span></div><div style="padding: 14px; overflow-x: auto;"><div class="gn-mono" style="font-size: 12.5px; line-height: 1.9; color: var(--text); white-space: pre;"><span style="color: var(--text-3);">$ </span>open -a pirep</div></div></div>
+<div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">It opens straight away — no security prompt on this route.</span><span class="l-ko">바로 열려요. 보안 경고 같은 건 안 나옵니다.</span></div>
+<div style="border-left: 2px solid var(--accent); padding: 2px 0px 2px 13px;"><div class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-text);"><span class="l-en">you are through when</span><span class="l-ko">되면</span></div><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin-top: 3px;"><span class="l-en">The window opens on the screen that asks for a folder.</span><span class="l-ko">pirep 창이 뜨고 폴더를 묻는 첫 화면이 보여요.</span></div></div></div></div></div>
+<div style="border: 1px solid var(--line); background: var(--surface);"><div style="display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap;"><span class="gn-mono" style="font-size: 12px; color: var(--accent-text); flex: 0 0 auto;">03</span><span class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid var(--accent-text); color: var(--accent-text); padding: 3px 7px; flex: 0 0 auto;"><span class="l-en">pirep, first screen</span><span class="l-ko">pirep 첫 화면</span></span><span style="font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;"><span class="l-en">Pick a folder — your Base</span><span class="l-ko">폴더 하나 고르기 — Base</span></span></div><div style="padding: 16px 18px 18px 46px; display: flex; flex-direction: column; gap: 12px;"><div style="display: flex; flex-direction: column; gap: 14px;"><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">The first screen offers two ways in. Both open the native folder picker; take the right one if you already keep notes somewhere.</span><span class="l-ko">첫 화면에 들어가는 길이 둘 있어요. 둘 다 맥 기본 폴더 선택창을 열고, 이미 쓰던 노트 폴더가 있으면 오른쪽이에요.</span></div>
+<div style="border: 1px solid var(--line); background: var(--surface);"><div style="padding: 10px 14px; border-bottom: 1px solid var(--line-soft);"><span class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);">FIRST SCREEN</span></div><div style="padding: 14px; overflow-x: auto;"><div class="gn-mono" style="font-size: 12.5px; line-height: 1.9; color: var(--text); white-space: pre;"><b>New Base</b>              Create an empty folder and set it as a pirep Base.
+<b>Open existing folder</b>  Open a folder that already contains markdown.</div></div></div>
+<div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">pirep then walks the folder. Versions live in a .pirep folder inside it; your documents do not move.</span><span class="l-ko">고르면 pirep 이 폴더를 훑어요. 버전은 그 안 .pirep 에만 쌓이고, 문서는 자리 그대로예요.</span></div>
+<div style="border-left: 2px solid var(--accent); padding: 2px 0px 2px 13px;"><div class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-text);"><span class="l-en">you are through when</span><span class="l-ko">되면</span></div><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin-top: 3px;"><span class="l-en">The Knowledge Inbox opens, with QUEUE and FILES in the sidebar.</span><span class="l-ko">Knowledge Inbox 가 열리고, 왼쪽 사이드바에 QUEUE · FILES 두 탭이 보여요.</span></div></div>
+<div style="border-top: 1px dashed var(--line); padding-top: 11px; display: flex; flex-direction: column; gap: 9px;"><div class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);"><span class="l-en">to change it later</span><span class="l-ko">나중에 바꾸려면</span></div><div style="display: flex; flex-direction: column; gap: 14px;"><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">Settings → Base → Change opens the same picker.</span><span class="l-ko">Settings → Base → Change. 같은 폴더 선택창이 열려요.</span></div></div></div></div></div></div>
+<div style="border: 1px solid var(--line); background: var(--surface);"><div style="display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap;"><span class="gn-mono" style="font-size: 12px; color: var(--accent-text); flex: 0 0 auto;">04</span><span class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid var(--accent-text); color: var(--accent-text); padding: 3px 7px; flex: 0 0 auto;"><span class="l-en">pirep</span><span class="l-ko">pirep</span></span><span style="font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;"><span class="l-en">See what changed outside</span><span class="l-ko">밖에서 바뀐 걸 확인</span></span></div><div style="padding: 16px 18px 18px 46px; display: flex; flex-direction: column; gap: 12px;"><div style="display: flex; flex-direction: column; gap: 14px;"><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">Leave pirep open and change a file in your Base from a terminal.</span><span class="l-ko">pirep 은 열어 둔 채로, 터미널에서 Base 안의 파일 하나를 고쳐 보세요.</span></div>
+<div style="border: 1px solid var(--line); background: var(--surface);"><div style="padding: 10px 14px; border-bottom: 1px solid var(--line-soft);"><span class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);">TERMINAL</span></div><div style="padding: 14px; overflow-x: auto;"><div class="gn-mono" style="font-size: 12.5px; line-height: 1.9; color: var(--text); white-space: pre;"><span style="color: var(--text-3);">$ </span>echo "a line from outside" >> ~/Notes/some-note.md</div></div></div>
+<img class="gn-shot gn-shot-light" width="3200" height="1240" src="/assets/hero-changes-light.png" alt="a word-level diff of a changed document" style="width: 100%; height: auto;">
+<img class="gn-shot gn-shot-dark" width="3200" height="1240" src="/assets/hero-changes-dark.png" alt="a word-level diff of a changed document" style="width: 100%; height: auto;">
+<div style="border-left: 2px solid var(--accent); padding: 2px 0px 2px 13px;"><div class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-text);"><span class="l-en">you are through when</span><span class="l-ko">되면</span></div><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2); margin-top: 3px;"><span class="l-en">The document appears under Changes at the top of QUEUE, and opening it shows the added line. ⌘U jumps there, ⇧⌘R marks it read.</span><span class="l-ko">사이드바 QUEUE 맨 위 Changes 에 그 문서가 올라오고, 열면 추가된 줄이 표시돼요. ⌘U 로 바로 가고, 읽었으면 ⇧⌘R.</span></div></div>
+<div style="border-top: 1px dashed var(--line); padding-top: 11px; display: flex; flex-direction: column; gap: 9px;"><div class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);"><span class="l-en">if there is no Changes row at all</span><span class="l-ko">Changes 줄이 아예 안 보이면</span></div><div style="display: flex; flex-direction: column; gap: 14px;"><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">Nothing has changed. The row is hidden when the list is empty.</span><span class="l-ko">바뀐 게 없는 거예요. 변경이 없을 때는 그 줄 자체가 안 나타나요.</span></div></div></div></div></div></div>
+</div>
+<div style="border-top: 1px dashed var(--line); padding-top: 11px; display: flex; flex-direction: column; gap: 9px;"><div class="gn-mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);"><span class="l-en">if you installed from the dmg instead</span><span class="l-ko">dmg 로 받았다면</span></div><div style="display: flex; flex-direction: column; gap: 14px;"><div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">A dmg fetched with a browser carries macOS's quarantine flag, so the first launch can be stopped with an unidentified-developer warning. The one-line install never shows it: the flag is put there by the browser, and install.sh strips it.</span><span class="l-ko">브라우저로 받은 dmg 에는 macOS 가 격리 표시를 붙여요. 그래서 처음 열 때 '확인되지 않은 개발자' 경고가 뜰 수 있습니다. 한 줄 설치에는 안 뜨는 이유도 같아요 — 그 표시를 붙이는 건 브라우저고, install.sh 가 마지막에 지우거든요.</span></div>
+<div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">Dismiss the warning, then System Settings → Privacy &amp; Security → Open Anyway → Open. Once, and never again.</span><span class="l-ko">경고를 닫고 → 시스템 설정 → 개인정보 보호 및 보안 → pirep 이 차단됐다는 줄에서 확인 없이 열기 → 열기 로 확인. 한 번만 하면 돼요.</span></div>
+<div style="font-size: 13.5px; line-height: 1.7; color: var(--text-2);"><span class="l-en">If macOS says the app is damaged, remove only the flag and open it again.</span><span class="l-ko">'손상되었다'고 나오면 표시만 지우고 다시 열면 돼요.</span></div>
+<div style="border: 1px solid var(--line); background: var(--surface);"><div style="padding: 10px 14px; border-bottom: 1px solid var(--line-soft);"><span class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3);">TERMINAL</span></div><div style="padding: 14px; overflow-x: auto;"><div class="gn-mono" style="font-size: 12.5px; line-height: 1.9; color: var(--text); white-space: pre;"><span style="color: var(--text-3);">$ </span>xattr -dr com.apple.quarantine /Applications/pirep.app</div></div></div></div></div>
+    </div>
+    <div style="padding: 0px 0px 76px;">
+      <p style="font-size: 14px; color: var(--text-2); margin: 0px;"><span class="l-en">Everything else is in the</span><span class="l-ko">나머지는 전부</span> <a href="../docs.html"><span class="l-en">docs</span><span class="l-ko">문서에 있어요</span></a></p>
+    </div>
+  </div>
+
+  <!-- gn-footer:start -->
+  <div style="border-top: 1px solid var(--line);">
+    <div style="max-width: 1120px; margin: 0px auto; padding: 44px 28px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+      <a href="./index.html" class="pirep-wordmark" data-product="pirep" style="color: var(--text-2);">pirep<i></i></a>
+      <span class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="l-en">2026 · made in Jeonju</span><span class="l-ko">2026 · 전주에서 만들었어요</span></span>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+        <a href="./index.html#get" style="font-size: 12.5px;" class="gn-navlink"><span class="l-en">Download</span><span class="l-ko">받기</span></a>
+        <a href="./docs.html" style="font-size: 12.5px;" class="gn-navlink"><span class="l-en">Docs</span><span class="l-ko">문서</span></a>
+        <a href="./changelog.html" style="font-size: 12.5px;" class="gn-navlink"><span class="l-en">Release notes</span><span class="l-ko">업데이트 기록</span></a>
+        <a href="https://github.com/garamnohhh/pirep" style="font-size: 12.5px;" class="gn-navlink"><span style="display: inline-flex; align-items: center; gap: 6px;"><svg viewBox="0 0 16 16" width="15" height="15" role="img" aria-label="GitHub" focusable="false" style="fill: currentColor; display: block;"><title>GitHub</title><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></span></a>
+        <a href="https://github.com/garamnohhh/pirep/blob/main/LICENSE" style="font-size: 12.5px;" class="gn-crumb-link"><span class="l-en">Apache 2.0 licence</span><span class="l-ko">Apache 2.0 라이선스</span></a>
+      </div>
+    </div>
+  </div>
+<!-- gn-footer:end -->
+</div>
+<script src="/garamnoh-system/deploy.js?v=3"></script>
+</body></html>
