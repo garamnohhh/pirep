@@ -12,19 +12,18 @@ import type { SlideKind } from "../../lib/slides";
 // viewer has its own. We only page for plain slide-shaped markup.
 export function SlideshowOverlay({
   kind,
-  html,
+  htmlSrc,
   pdfSrc,
   name,
   onClose,
 }: {
   kind: SlideKind;
-  html?: string;
+  htmlSrc?: string;
   pdfSrc?: string;
   name: string;
   onClose: () => void;
 }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
-  const [src, setSrc] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [count, setCount] = useState(kind?.kind === "elements" ? kind.count : 0);
   // Bumped on frame load: the hide-all-but-one effect needs a trigger once the
@@ -32,13 +31,6 @@ export function SlideshowOverlay({
   const [ready, setReady] = useState(0);
 
   const paging = kind?.kind === "elements";
-
-  useEffect(() => {
-    if (html === undefined) return;
-    const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-    setSrc(url);
-    return () => URL.revokeObjectURL(url);
-  }, [html]);
 
   useEffect(() => {
     modalStack.push();
@@ -199,7 +191,7 @@ export function SlideshowOverlay({
     } catch { /* not ready yet — onLoad re-runs this via setCount */ }
   }, [index, paging, kind, ready]);
 
-  const frameSrc = pdfSrc ?? src;
+  const frameSrc = pdfSrc ?? htmlSrc;
 
   return (
     <div

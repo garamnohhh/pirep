@@ -5,7 +5,7 @@ import { getHighlighter, normalizeLang } from "../../lib/shiki";
 import { createFileEditor } from "../../lib/fileEditor";
 import { getMermaid } from "../../lib/mermaid";
 import { registerFindTarget } from "../../lib/find";
-import { detectSlidesIn, needsAssetBase, withAssetBase } from "../../lib/slides";
+import { assetFileHref, detectSlides } from "../../lib/slides";
 import type { SlideKind } from "../../lib/slides";
 import { SlideshowOverlay } from "./SlideshowOverlay";
 import { EditorView } from "@codemirror/view";
@@ -105,101 +105,10 @@ function FileEditorHost({
   return <div ref={host} />;
 }
 
-// HTML preview — forwards keydown from iframe to outer window so useKeymap works.
-//
-// Served from a blob: URL rather than srcdoc. In a srcdoc frame the document is
-// `about:srcdoc`, so relative URLs (incl. bare "#frag") resolve against the PARENT
-// (tauri://localhost) and the frame cannot own a hash at all — history/hash writes
-// throw SecurityError. That left hash-routed single-file docs (nav links driving
-// `hashchange`) completely dead. A blob URL gives the frame a real origin, so
-// in-page anchors and hashchange routing work natively, like in a browser.
-//
-// Tauri injects its IPC-init script into this same-origin iframe too; it fails there
-// ("__TAURI_INTERNALS__.transformCallback undefined") and WKWebView surfaces the
-// rejection on the top window. That's swallowed in main.tsx (see isTauriFrameNoise).
-function HtmlPreview({ text, name, onDetect }: { text: string; name: string; onDetect?: (k: SlideKind) => void }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [src, setSrc] = useState<string | null>(null);
-
-  useEffect(() => {
-    const url = URL.createObjectURL(new Blob([text], { type: "text/html" }));
-    setSrc(url);
-    return () => URL.revokeObjectURL(url);
-  }, [text]);
-  // `text` already carries a <base> pointing at the file's directory (see
-  // FileViewer) — a blob: URL has no directory of its own, so without it the
-  // document's relative stylesheets, scripts and images never load.
-
-  function forwardKeys() {
-    const cw = iframeRef.current?.contentWindow;
-    if (!cw) return;
-    // Slide detection runs against the live document, and a single-file deck
-    // export builds its slides from script — so re-check for a while instead of
-    // deciding once at load.
-    if (onDetect) {
-      let found = false;
-      for (const delay of [0, 300, 1200, 2500]) {
-        setTimeout(() => {
-          if (found || !iframeRef.current) return;
-          const doc = iframeRef.current.contentDocument;
-          const kind = doc ? detectSlidesIn(doc) : null;
-          if (kind) { found = true; onDetect(kind); }
-        }, delay);
-      }
-    }
-    if (!cw.document.querySelector("style[data-pirep-find]")) {
-      const style = cw.document.createElement("style");
-      style.dataset.pirepFind = "";
-      style.textContent = "::selection{background:rgba(255,210,74,.72);color:inherit}";
-      cw.document.head.appendChild(style);
-    }
-    // Forward keyboard events to parent window
-    cw.addEventListener("keydown", (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") e.preventDefault();
-      window.dispatchEvent(new KeyboardEvent("keydown", {
-        key: e.key, code: e.code,
-        metaKey: e.metaKey, ctrlKey: e.ctrlKey,
-        shiftKey: e.shiftKey, altKey: e.altKey,
-        bubbles: true, cancelable: true,
-      }));
-    }, true);
-    // In-page anchors and hash routing are native here. Only block navigation
-    // that would replace the preview (external/file links); those can't load in
-    // the frame anyway.
-    cw.document.addEventListener("click", (e) => {
-      const a = (e.target as Element).closest("a");
-      if (!a) return;
-      const href = a.getAttribute("href") ?? "";
-      // Drive in-page fragments ourselves. Native handling resolves "#frag"
-      // against the <base> when one is present, which points at a different
-      // document and makes the link do nothing at all. Assigning location.hash
-      // both scrolls and fires hashchange, so plain anchors and hash-routed
-      // documents keep working whether or not a base was injected.
-      if (href.startsWith("#")) {
-        e.preventDefault();
-        const frag = href.slice(1);
-        if (!frag) { cw.scrollTo({ top: 0, behavior: "smooth" }); return; }
-        if (cw.location.hash === href) {
-          // Re-clicking the current target: the setter is a no-op, so scroll.
-          cw.document.getElementById(decodeURIComponent(frag))
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
-          return;
-        }
-        cw.location.hash = frag;
-        return;
-      }
-      if (!href) return;
-      e.preventDefault();
-    }, true);
-  }
-
-  if (!src) return <div style={{ flex: 1 }} />;
-
+function HtmlPreview({ src, name }: { src: string; name: string }) {
   return (
     <iframe
-      ref={iframeRef}
       src={src}
-      onLoad={forwardKeys}
       sandbox="allow-scripts allow-same-origin allow-forms"
       style={{ flex: 1, border: "none", width: "100%", height: "100%" }}
       title={name}
@@ -374,8 +283,8 @@ function MmdPreview({ text }: { text: string }) {
   );
 }
 
-function RenderView({ text, fileExt, name, onDetect }: { text: string; fileExt: string; name: string; onDetect?: (k: SlideKind) => void }) {
-  if (fileExt === "html" || fileExt === "htm") return <HtmlPreview text={text} name={name} onDetect={onDetect} />;
+function RenderView({ text, fileExt, name, htmlSrc }: { text: string; fileExt: string; name: string; htmlSrc?: string }) {
+  if ((fileExt === "html" || fileExt === "htm") && htmlSrc) return <HtmlPreview src={htmlSrc} name={name} />;
   if (fileExt === "svg") return <SvgPreview text={text} name={name} />;
   if (fileExt === "csv" || fileExt === "tsv") return <CsvPreview text={text} fileExt={fileExt} />;
   if (fileExt === "mmd") return <MmdPreview text={text} />;
@@ -413,24 +322,13 @@ export function FileViewer() {
   const isPdf = fileExt === "pdf";
   const isHtml = fileExt === "html" || fileExt === "htm";
 
-  // Absolute directory of this file, used as the <base> for its sibling assets.
-  const assetDir = vaultRoot
-    ? [vaultRoot.replace(/\/$/, ""), ...relPath.split("/").slice(0, -1)].join("/")
-    : null;
-  // Only documents that reference sibling files get a <base>. It is what makes
-  // their assets load, but it also re-points bare "#frag" links at the base URL,
-  // so a self-contained document is left exactly as authored.
-  const htmlText = useMemo(
-    () => (isHtml && assetDir && needsAssetBase(text) ? withAssetBase(text, assetDir) : text),
-    [isHtml, assetDir, text],
-  );
+  const htmlSrc = isHtml && vaultRoot ? assetFileHref(vaultRoot, relPath) : undefined;
 
   // Slideshow is offered only for HTML that actually looks like slides, and for
   // PDFs (already paginated). Prose HTML gets no button — we don't guess breaks.
   // HTML is judged by the rendered preview (see HtmlPreview), not by its source.
-  const [htmlKind, setHtmlKind] = useState<SlideKind>(null);
-  useEffect(() => { setHtmlKind(null); }, [relPath]);
-  const slideKind: SlideKind = isPdf ? { kind: "pdf" } : isHtml ? htmlKind : null;
+  const htmlKind = useMemo(() => isHtml && text ? detectSlides(text) : null, [isHtml, text]);
+  const slideKind: SlideKind = isPdf ? { kind: "pdf" } : htmlKind?.kind === "deck" ? htmlKind : null;
 
   const maxW = editorWidth === "wide" ? "var(--spacing-reading-wide)" : "var(--spacing-reading)";
 
@@ -480,7 +378,7 @@ export function FileViewer() {
   const slideshow = showSlides && slideKind && (
     <SlideshowOverlay
       kind={slideKind}
-      html={isHtml ? htmlText : undefined}
+      htmlSrc={htmlSrc}
       pdfSrc={pdfSrc}
       name={name}
       onClose={() => setShowSlides(false)}
@@ -516,7 +414,7 @@ export function FileViewer() {
         <div className="flex min-w-0 flex-1 flex-col">
           {header("rendered · the document's own styles")}
           <div className="relative flex min-h-0 flex-1">
-            <RenderView text={isHtml ? htmlText : text} fileExt={fileExt} name={name} onDetect={setHtmlKind} />
+            <RenderView text={text} fileExt={fileExt} name={name} htmlSrc={htmlSrc} />
           </div>
           {slideshow}
         </div>

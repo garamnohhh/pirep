@@ -1,15 +1,7 @@
 //! `pirepfile://` — serves a vault file to the HTML preview iframe.
 //!
-//! HTML previews render from a blob: URL, which has no directory, so a document's
-//! relative references (`./support.js`, `_ds/styles.css`, `assets/logo.svg`) resolve
-//! against nothing and are never even requested. Injecting a `<base>` fixes that, but
-//! only if the base URL is a real *directory* URL.
-//!
-//! Tauri's built-in `asset://` can't be that base: its handler percent-decodes the whole
-//! path at once, so `convertFileSrc` has to encode every `/` as `%2F` — collapsing the
-//! path into a single opaque segment. Relative URLs then resolve against the origin root
-//! instead of the file's folder. This scheme keeps the separators and decodes per segment,
-//! so `<base>` works and nested references (a stylesheet's own `url(...)` fonts) work too.
+//! HTML previews load directly from this isolated origin, so relative references resolve
+//! naturally and preview-only CSP can be set on the document response.
 
 use crate::commands::VaultState;
 use std::path::{Component, Path, PathBuf};
@@ -17,6 +9,7 @@ use tauri::{Manager, UriSchemeContext, Runtime};
 use tauri::http::{Request, Response};
 
 pub const SCHEME: &str = "pirepfile";
+const HTML_CSP: &str = "default-src 'none'; script-src 'self' 'unsafe-inline' https: pirepfile:; style-src 'self' 'unsafe-inline' https: pirepfile:; font-src 'self' https: data: pirepfile:; img-src 'self' https: data: blob: pirepfile:; media-src 'self' https: data: blob: pirepfile:; connect-src 'self' https: pirepfile:; frame-src 'self' https: data: blob: pirepfile:; form-action https:; base-uri 'self' https: pirepfile:; object-src 'none'";
 
 /// URL path (`/Users/g/My%20Base/deck/support.js`) → absolute filesystem path.
 /// Decoding is per segment so that `%20` in a folder name survives. A decoded
@@ -91,15 +84,20 @@ fn resolve(root: Option<PathBuf>, url_path: &str) -> Result<PathBuf, u16> {
 fn serve(root: Option<PathBuf>, url_path: &str) -> Response<Vec<u8>> {
     match resolve(root, url_path) {
         Ok(path) => match std::fs::read(&path) {
-            Ok(bytes) => Response::builder()
-                .status(200)
-                .header("Content-Type", mime_for(&path))
-                .header("Access-Control-Allow-Origin", "*")
+            Ok(bytes) => {
+                let mime = mime_for(&path);
+                let mut response = Response::builder()
+                    .status(200)
+                    .header("Content-Type", mime)
+                    .header("Access-Control-Allow-Origin", "*")
                 // Vault files change under the app, and a failed load stays
                 // failed in the webview's cache for the life of the session.
-                .header("Cache-Control", "no-store")
-                .body(bytes)
-                .unwrap(),
+                    .header("Cache-Control", "no-store");
+                if mime.starts_with("text/html") {
+                    response = response.header("Content-Security-Policy", HTML_CSP);
+                }
+                response.body(bytes).unwrap()
+            }
             Err(_) => Response::builder().status(404).body(Vec::new()).unwrap(),
         },
         Err(code) => Response::builder().status(code).body(Vec::new()).unwrap(),
@@ -191,6 +189,32 @@ mod tests {
             assert_eq!(response.headers()["Cache-Control"], "no-store");
             assert_eq!(response.body(), body);
             assert_eq!(response.body().len(), body.len());
+        }
+
+        std::fs::remove_dir_all(&vault).ok();
+    }
+
+    #[test]
+    fn adds_preview_csp_to_html_only() {
+        let vault = std::env::temp_dir().join(format!(
+            "pirep-assets-csp-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&vault).unwrap();
+        std::fs::write(vault.join("index.html"), "<h1>preview</h1>").unwrap();
+        std::fs::write(vault.join("style.css"), "h1{}").unwrap();
+        std::fs::write(vault.join("image.png"), b"\x89PNG\r\n\x1a\n").unwrap();
+
+        let html = serve(Some(vault.clone()), vault.join("index.html").to_str().unwrap());
+        let csp = html.headers().get("Content-Security-Policy").unwrap().to_str().unwrap();
+        assert!(csp.contains("script-src 'self' 'unsafe-inline' https: pirepfile:"));
+        assert!(csp.contains("style-src 'self' 'unsafe-inline' https: pirepfile:"));
+        assert!(csp.contains("font-src 'self' https: data: pirepfile:"));
+        assert!(csp.contains("img-src 'self' https: data: blob: pirepfile:"));
+
+        for name in ["style.css", "image.png"] {
+            let response = serve(Some(vault.clone()), vault.join(name).to_str().unwrap());
+            assert!(response.headers().get("Content-Security-Policy").is_none());
         }
 
         std::fs::remove_dir_all(&vault).ok();

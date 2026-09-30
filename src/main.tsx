@@ -15,15 +15,6 @@ function showFatal(msg: string) {
   if (el)
     el.innerHTML = `<pre style="white-space:pre-wrap;padding:24px;font:13px monospace;color:var(--color-red)">${msg}</pre>`;
 }
-// Tauri's IPC-init script runs in every frame, including sandboxed HTML-preview
-// iframes (same-origin via allow-same-origin). In a frame it never registers with,
-// init throws "__TAURI_INTERNALS__.transformCallback undefined" and WKWebView reports
-// it on the top window. Harmless — a preview iframe never calls Tauri IPC — so ignore
-// it instead of blanking the whole app with showFatal.
-function isTauriFrameNoise(text: string): boolean {
-  return text.includes("__TAURI_INTERNALS__");
-}
-
 // ponytail: dedupe across Vite HMR — main.tsx is the entry, a hot reload re-runs it
 // and would stack a second (stale-closure) listener on top of the old one.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,12 +23,10 @@ if (_w.__pirepOnError) window.removeEventListener("error", _w.__pirepOnError);
 if (_w.__pirepOnRej) window.removeEventListener("unhandledrejection", _w.__pirepOnRej);
 
 _w.__pirepOnError = (e: ErrorEvent) => {
-  if (isTauriFrameNoise(e.message ?? "")) return;
   showFatal(`[error] ${e.message}\n${e.error?.stack ?? ""}`);
 };
 _w.__pirepOnRej = (e: PromiseRejectionEvent) => {
   const msg = String(e.reason);
-  if (isTauriFrameNoise(msg)) { e.preventDefault(); return; }
   showFatal(`[promise] ${msg}`);
 };
 

@@ -17,6 +17,10 @@ export function assetBaseHref(absDir: string): string {
   return `pirepfile://localhost/${segments.map((s) => `${s}/`).join("")}`;
 }
 
+export function assetFileHref(vaultRoot: string, relPath: string): string {
+  return new URL(relPath.split("/").map(encodeURIComponent).join("/"), assetBaseHref(vaultRoot)).href;
+}
+
 export function localImageUrl(src: string, vaultRoot: string, docPath: string): string | null {
   if (!src || /^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(src)) return null;
   const path = src.split(/[?#]/, 1)[0];
