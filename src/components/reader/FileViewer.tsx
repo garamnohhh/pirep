@@ -10,6 +10,7 @@ import type { SlideKind } from "../../lib/slides";
 import { SlideshowOverlay } from "./SlideshowOverlay";
 import { EditorView } from "@codemirror/view";
 import { openWithOtherApp, revealInFinder } from "../../lib/handoff";
+import { previewKeyFromMessage } from "../../lib/previewKeys";
 import { ExtChip } from "../ui/ExtChip";
 
 // svg moved out of IMAGE_EXTS so it becomes editable text
@@ -106,8 +107,24 @@ function FileEditorHost({
 }
 
 function HtmlPreview({ src, name }: { src: string; name: string }) {
+  const frame = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      const source = frame.current?.contentWindow;
+      if (!source) return;
+      const key = previewKeyFromMessage(event, source);
+      if (key) {
+        window.dispatchEvent(new KeyboardEvent("keydown", { ...key, bubbles: true, cancelable: true }));
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
   return (
     <iframe
+      ref={frame}
       src={src}
       sandbox="allow-scripts allow-same-origin allow-forms"
       style={{ flex: 1, border: "none", width: "100%", height: "100%" }}

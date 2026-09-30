@@ -5,11 +5,23 @@
 
 use crate::commands::VaultState;
 use std::path::{Component, Path, PathBuf};
-use tauri::{Manager, UriSchemeContext, Runtime};
 use tauri::http::{Request, Response};
+use tauri::{Manager, Runtime, UriSchemeContext};
 
 pub const SCHEME: &str = "pirepfile";
 const HTML_CSP: &str = "default-src 'none'; script-src 'self' 'unsafe-inline' https: pirepfile:; style-src 'self' 'unsafe-inline' https: pirepfile:; font-src 'self' https: data: pirepfile:; img-src 'self' https: data: blob: pirepfile:; media-src 'self' https: data: blob: pirepfile:; connect-src 'self' https: pirepfile:; frame-src 'self' https: data: blob: pirepfile:; form-action https:; base-uri 'self' https: pirepfile:; object-src 'none'";
+const KEY_BRIDGE: &str = r#"<script>(()=>{addEventListener('keydown',e=>{if(e.key==='Escape'||e.metaKey||e.ctrlKey||e.altKey)parent.postMessage({type:'pirep-keydown',key:e.key,metaKey:e.metaKey,ctrlKey:e.ctrlKey,altKey:e.altKey,shiftKey:e.shiftKey},'*')})})()</script>"#;
+
+fn inject_key_bridge(mut html: Vec<u8>) -> Vec<u8> {
+    let insert = String::from_utf8_lossy(&html)
+        .to_ascii_lowercase()
+        .rfind("</body>");
+    match insert {
+        Some(at) => html.splice(at..at, KEY_BRIDGE.bytes()).for_each(drop),
+        None => html.extend_from_slice(KEY_BRIDGE.as_bytes()),
+    }
+    html
+}
 
 /// URL path (`/Users/g/My%20Base/deck/support.js`) → absolute filesystem path.
 /// Decoding is per segment so that `%20` in a folder name survives. A decoded
@@ -84,7 +96,7 @@ fn resolve(root: Option<PathBuf>, url_path: &str) -> Result<PathBuf, u16> {
 fn serve(root: Option<PathBuf>, url_path: &str) -> Response<Vec<u8>> {
     match resolve(root, url_path) {
         Ok(path) => match std::fs::read(&path) {
-            Ok(bytes) => {
+            Ok(mut bytes) => {
                 let mime = mime_for(&path);
                 let mut response = Response::builder()
                     .status(200)
@@ -95,6 +107,7 @@ fn serve(root: Option<PathBuf>, url_path: &str) -> Response<Vec<u8>> {
                     .header("Cache-Control", "no-store");
                 if mime.starts_with("text/html") {
                     response = response.header("Content-Security-Policy", HTML_CSP);
+                    bytes = inject_key_bridge(bytes);
                 }
                 response.body(bytes).unwrap()
             }
@@ -218,5 +231,15 @@ mod tests {
         }
 
         std::fs::remove_dir_all(&vault).ok();
+    }
+
+    #[test]
+    fn injects_key_bridge_after_document_scripts() {
+        let html = b"<html><body><script>window.own=true</script></body></html>";
+        let injected = String::from_utf8(inject_key_bridge(html.to_vec())).unwrap();
+        assert!(
+            injected.find("window.own=true").unwrap() < injected.find("pirep-keydown").unwrap()
+        );
+        assert!(injected.contains("parent.postMessage"));
     }
 }
