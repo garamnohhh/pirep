@@ -345,7 +345,7 @@ export function FileViewer() {
   // PDFs (already paginated). Prose HTML gets no button — we don't guess breaks.
   // HTML is judged by the rendered preview (see HtmlPreview), not by its source.
   const htmlKind = useMemo(() => isHtml && text ? detectSlides(text) : null, [isHtml, text]);
-  const slideKind: SlideKind = isPdf ? { kind: "pdf" } : htmlKind?.kind === "deck" ? htmlKind : null;
+  const slideKind: SlideKind = isPdf ? { kind: "pdf" } : htmlKind;
 
   const maxW = editorWidth === "wide" ? "var(--spacing-reading-wide)" : "var(--spacing-reading)";
 

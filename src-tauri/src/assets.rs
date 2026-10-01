@@ -10,7 +10,15 @@ use tauri::{Manager, Runtime, UriSchemeContext};
 
 pub const SCHEME: &str = "pirepfile";
 const HTML_CSP: &str = "default-src 'none'; script-src 'self' 'unsafe-inline' https: pirepfile:; style-src 'self' 'unsafe-inline' https: pirepfile:; font-src 'self' https: data: pirepfile:; img-src 'self' https: data: blob: pirepfile:; media-src 'self' https: data: blob: pirepfile:; connect-src 'self' https: pirepfile:; frame-src 'self' https: data: blob: pirepfile:; form-action https:; base-uri 'self' https: pirepfile:; object-src 'none'";
-const KEY_BRIDGE: &str = r#"<script>(()=>{addEventListener('keydown',e=>{if(e.key==='Escape'||e.metaKey||e.ctrlKey||e.altKey)parent.postMessage({type:'pirep-keydown',key:e.key,metaKey:e.metaKey,ctrlKey:e.ctrlKey,altKey:e.altKey,shiftKey:e.shiftKey},'*')})})()</script>"#;
+const KEY_BRIDGE: &str = r#"<script>(()=>{
+const selectors=['section[data-label]','.slide','.reveal .slides > section','.step','[data-slide]'];
+let slides=[],index=0,presenting=false;
+function state(){parent.postMessage({type:'pirep-slides-state',current:index+1,total:slides.length},'*')}
+function show(n){if(!slides.length)return;presenting=true;index=Math.max(0,Math.min(n,slides.length-1));document.documentElement.style.cssText='height:100%;overflow:hidden;background:#111';document.body.style.cssText='height:100%;margin:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#111';slides.forEach((el,i)=>el.style.display=i===index?'':'none');const el=slides[index],w=el.offsetWidth||1,h=el.offsetHeight||1;el.style.transformOrigin='center';el.style.transform='scale('+Math.min(innerWidth/w,innerHeight/h,1)+')';state()}
+addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='pirep-slides-command')return;const d=e.data;slides=[];for(const s of selectors){const found=[...document.querySelectorAll(s)];if(found.length>=2){slides=found;break}}if(!slides.length)return;switch(d.action){case'next':show(index+1);break;case'prev':show(index-1);break;case'first':show(0);break;case'last':show(slides.length-1);break;case'goto':if(Number.isInteger(d.index))show(d.index);break}});
+addEventListener('keydown',e=>{if(e.key==='Escape'||e.metaKey||e.ctrlKey||e.altKey||presenting&&['ArrowRight','ArrowLeft','PageDown','PageUp',' '].includes(e.key))parent.postMessage({type:'pirep-keydown',key:e.key,metaKey:e.metaKey,ctrlKey:e.ctrlKey,altKey:e.altKey,shiftKey:e.shiftKey},'*')});
+document.addEventListener('click',()=>{if(presenting)show(index+1)});
+})()</script>"#;
 
 fn inject_key_bridge(mut html: Vec<u8>) -> Vec<u8> {
     let insert = String::from_utf8_lossy(&html)
@@ -241,5 +249,9 @@ mod tests {
             injected.find("window.own=true").unwrap() < injected.find("pirep-keydown").unwrap()
         );
         assert!(injected.contains("parent.postMessage"));
+        assert!(injected.contains("'.slide'"));
+        assert!(injected.contains("'section[data-label]'"));
+        assert!(injected.contains("'pirep-slides-command'"));
+        assert!(injected.contains("'pirep-slides-state'"));
     }
 }

@@ -1,4 +1,7 @@
-import { assetBaseHref, assetFileHref, localImageUrl, needsAssetBase, withAssetBase } from "./slides.ts";
+import {
+  assetBaseHref, assetFileHref, localImageUrl, needsAssetBase, withAssetBase,
+  detectSlideSelector, slideIndexForCommand, slidesStateFromMessage,
+} from "./slides.ts";
 
 function equal(actual: unknown, expected: unknown) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
@@ -48,5 +51,36 @@ equal(needsAssetBase('<script src="//cdn/x.js"></script>'), false);
 equal(needsAssetBase('<script src="./support.js"></script>'), true);
 equal(needsAssetBase('<link rel="stylesheet" href="_ds/styles.css">'), true);
 equal(needsAssetBase('<img src="assets/logo.svg">'), true);
+
+equal(detectSlideSelector({ ".slide": 3, "[data-slide]": 4 }), { selector: ".slide", count: 3 });
+equal(detectSlideSelector({ ".slide": 1, "[data-slide]": 2 }), { selector: "[data-slide]", count: 2 });
+equal(detectSlideSelector({ ".slide": 1 }), null);
+equal(slideIndexForCommand(1, 3, { action: "next" }), 2);
+equal(slideIndexForCommand(2, 3, { action: "next" }), 2);
+equal(slideIndexForCommand(1, 3, { action: "prev" }), 0);
+equal(slideIndexForCommand(1, 3, { action: "first" }), 0);
+equal(slideIndexForCommand(1, 3, { action: "last" }), 2);
+equal(slideIndexForCommand(0, 3, { action: "goto", index: 9 }), 2);
+equal(slideIndexForCommand(0, 3, { action: "goto", index: -2 }), 0);
+equal(slideIndexForCommand(0, 3, { action: "goto", index: 1.5 }), 0);
+
+const frame = {} as Window;
+const stateEvent = (source: MessageEventSource | null, origin: string, data: unknown) =>
+  ({ source, origin, data }) as MessageEvent;
+equal(slidesStateFromMessage(stateEvent(frame, "pirepfile://localhost", {
+  type: "pirep-slides-state", current: 2, total: 3, ignored: "discard",
+}), frame), { current: 2, total: 3 });
+equal(slidesStateFromMessage(stateEvent({} as Window, "pirepfile://localhost", {
+  type: "pirep-slides-state", current: 2, total: 3,
+}), frame), null);
+equal(slidesStateFromMessage(stateEvent(frame, "https://example.com", {
+  type: "pirep-slides-state", current: 2, total: 3,
+}), frame), null);
+equal(slidesStateFromMessage(stateEvent(frame, "pirepfile://localhost", {
+  type: "pirep-slides-state", current: "2", total: 3,
+}), frame), null);
+equal(slidesStateFromMessage(stateEvent(frame, "pirepfile://localhost", {
+  type: "pirep-slides-state", current: 4, total: 3,
+}), frame), null);
 
 console.log("slides tests passed");

@@ -77,13 +77,48 @@ export type SlideKind =
 // problem — no ordinary document puts its content inside `.reveal .slides` or
 // marks it `.step`. Without them a reveal.js or impress.js export got no
 // slideshow button at all, which is what "slide 버튼이 다 있는 게 아니네" was.
-const SLIDE_SELECTORS = [
+export const SLIDE_SELECTORS = [
   "section[data-label]",
   ".slide",
   ".reveal .slides > section",   // reveal.js
   ".step",                       // impress.js
   "[data-slide]",
 ];
+
+export type SlideCommand =
+  | { action: "next" | "prev" | "first" | "last" }
+  | { action: "goto"; index: number };
+
+export function detectSlideSelector(counts: Record<string, number>): { selector: string; count: number } | null {
+  for (const selector of SLIDE_SELECTORS) {
+    const count = counts[selector] ?? 0;
+    if (count >= 2) return { selector, count };
+  }
+  return null;
+}
+
+export function slideIndexForCommand(index: number, count: number, command: SlideCommand): number {
+  if (count < 1) return 0;
+  const current = Number.isInteger(index) ? Math.max(0, Math.min(index, count - 1)) : 0;
+  switch (command.action) {
+    case "next": return Math.min(current + 1, count - 1);
+    case "prev": return Math.max(current - 1, 0);
+    case "first": return 0;
+    case "last": return count - 1;
+    case "goto": return Number.isInteger(command.index) ? Math.max(0, Math.min(command.index, count - 1)) : current;
+  }
+}
+
+export function slidesStateFromMessage(
+  event: MessageEvent,
+  frame: Window | null,
+): { current: number; total: number } | null {
+  if (!frame || event.source !== frame || event.origin !== "pirepfile://localhost") return null;
+  const data = event.data;
+  if (data?.type !== "pirep-slides-state" || !Number.isInteger(data.current) || !Number.isInteger(data.total)) return null;
+  if (data.total < 2 || data.current < 1 || data.current > data.total) return null;
+  return { current: data.current, total: data.total };
+}
 
 // `x-import` is the authored form; `deck-stage` is what it becomes once the
 // document's own script upgrades it.
@@ -109,10 +144,10 @@ function deckRuntimeIsLive(doc: Document): boolean {
 
 export function detectSlidesIn(doc: Document): SlideKind {
   if (deckRuntimeIsLive(doc)) return { kind: "deck" };
-  for (const selector of SLIDE_SELECTORS) {
-    const n = doc.querySelectorAll(selector).length;
-    if (n >= 2) return { kind: "elements", selector, count: n };
-  }
+  const match = detectSlideSelector(Object.fromEntries(
+    SLIDE_SELECTORS.map((selector) => [selector, doc.querySelectorAll(selector).length]),
+  ));
+  if (match) return { kind: "elements", ...match };
   // A deck-stage that never woke up and has no sections we can page: still
   // worth offering, the document just drives itself.
   if (doc.querySelector(DECK_SELECTOR)) return { kind: "deck" };
