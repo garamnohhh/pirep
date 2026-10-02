@@ -1,0 +1,47 @@
+html,
+body,
+#root {
+  height: auto;
+  min-height: 100%;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../../public/fonts/JetBrainsMonoNerdFont-Regular.subset.woff2") format("woff2");
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "D2Coding";
+  src: url("../../public/fonts/D2Coding-Ver1.3.2-20180524.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-paper);
+}
+
+#root {
+  overflow: visible;
+  border-radius: 0;
+  background: var(--color-paper);
+}
+
+main {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 28px clamp(22px, 7vw, 72px) 48px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+.md-body {
+  max-width: 840px;
+  margin: 0 auto;
+}
