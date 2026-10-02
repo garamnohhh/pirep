@@ -21,6 +21,7 @@ fi
 
 mkdir -p "$PROTO_ROOT/samples" "$PROTO_ROOT/build/swift-module-cache"
 pnpm exec vite build --config "$ROOT/quicklook/renderer/vite.config.ts"
+QL_RENDERER_BUNDLE=mermaid pnpm exec vite build --config "$ROOT/quicklook/renderer/vite.config.ts"
 cp "$ROOT"/quicklook/samples/*.md "$PROTO_ROOT/samples/"
 
 if [[ -e "$APP" ]]; then

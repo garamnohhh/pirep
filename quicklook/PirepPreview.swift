@@ -21,6 +21,8 @@ final class PirepPreviewViewController: NSViewController, QLPreviewingController
         webView.translatesAutoresizingMaskIntoConstraints = false
         errorLabel.translatesAutoresizingMaskIntoConstraints = false
         errorLabel.alignment = .center
+        errorLabel.maximumNumberOfLines = 0
+        errorLabel.lineBreakMode = .byWordWrapping
         errorLabel.textColor = .secondaryLabelColor
         errorLabel.isHidden = true
         container.addSubview(webView)
@@ -32,8 +34,8 @@ final class PirepPreviewViewController: NSViewController, QLPreviewingController
             webView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             errorLabel.centerXAnchor.constraint(equalTo: container.centerXAnchor),
             errorLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            errorLabel.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 24),
-            errorLabel.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -24),
+            errorLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 24),
+            errorLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -24),
         ])
         view = container
     }
@@ -57,7 +59,13 @@ final class PirepPreviewViewController: NSViewController, QLPreviewingController
               let data = try? JSONSerialization.data(withJSONObject: [markdown]),
               let json = String(data: data, encoding: .utf8) else { return }
         pendingMarkdown = nil
-        webView.evaluateJavaScript("window.renderQuickLook && window.renderQuickLook((\(json))[0])")
+        webView.evaluateJavaScript("""
+        if (typeof window.renderQuickLook !== "function") throw new Error("Renderer script did not start");
+        window.renderQuickLook((\(json))[0]);
+        true;
+        """) { _, error in
+            if let error { self.show(error) }
+        }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

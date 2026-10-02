@@ -1,27 +1,33 @@
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
+const mermaidBundle = process.env.QL_RENDERER_BUNDLE === "mermaid";
 
 export default defineConfig({
   root,
   base: "./",
   build: {
     outDir: path.resolve(root, "../../src-tauri/target/quicklook-renderer"),
-    emptyOutDir: true,
+    emptyOutDir: !mermaidBundle,
+    ...(mermaidBundle ? {
+      lib: {
+        entry: path.resolve(root, "mermaid-entry.ts"),
+        name: "PirepMermaid",
+        formats: ["iife" as const],
+      },
+    } : {}),
     rollupOptions: {
       output: {
         format: "iife",
         inlineDynamicImports: true,
-        entryFileNames: "renderer.js",
+        entryFileNames: mermaidBundle ? "mermaid.js" : "renderer.js",
       },
     },
   },
   plugins: [
-    react(),
     tailwindcss(),
     {
       name: "quicklook-classic-script",
