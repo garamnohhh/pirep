@@ -70,7 +70,7 @@ If macOS says the app is damaged, remove only its quarantine flag with `xattr -d
 
 - **Apple Silicon only** (M1 and later). It will not run on an Intel Mac.
 - Built on macOS 26, and still fine on 27.
-- `0.1.0` is the first release under the name pirep. It is built from the current source, so it carries every fix made so far.
+- The current release is `0.1.3`, published on 2026-09-30.
 
 ## Building from source
 
