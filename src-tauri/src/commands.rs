@@ -258,6 +258,11 @@ pub fn mark_read(doc_id: String, state: State<VaultState>) -> Result<Db, String>
 }
 
 #[tauri::command]
+pub fn mark_read_many(doc_ids: Vec<String>, state: State<VaultState>) -> Result<Db, String> {
+    vault::mark_read_many(&get_root(&state)?, &doc_ids)
+}
+
+#[tauri::command]
 pub fn list_updates(state: State<VaultState>) -> Result<Vec<DocEntry>, String> {
     Ok(vault::list_updates(&get_root(&state)?))
 }

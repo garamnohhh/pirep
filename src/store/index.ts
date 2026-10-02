@@ -187,6 +187,7 @@ interface AppState {
   goInbox: () => void;
   openDiff: (docId: string, from: number, to: number) => void;
   markRead: (docId: string) => Promise<void>;
+  markReadMany: (docIds: string[]) => Promise<void>;
   acceptChange: (docId: string) => Promise<void>;
   revert: (docId: string, version: number) => Promise<void>;
   applyDb: (db: Db) => void;
@@ -505,6 +506,11 @@ function _build() { return create<AppState>()(
 
       markRead: async (docId) => {
         const db = await api.markRead(docId);
+        set({ db });
+      },
+
+      markReadMany: async (docIds) => {
+        const db = await api.markReadMany(docIds);
         set({ db });
       },
 

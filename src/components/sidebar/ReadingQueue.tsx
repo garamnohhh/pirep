@@ -22,12 +22,16 @@ function timeAgo(mtime: number): string {
 
 const fullTime = (secs: number) => new Date(secs * 1000).toLocaleString();
 
-function Group({ label, children }: { label?: string; children: React.ReactNode }) {
+function Group({ label, action, children }: {
+  label?: string;
+  action?: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       {label && (
         <div
-          className="font-mono uppercase text-mid"
+          className="flex items-center font-mono uppercase text-mid"
           style={{
             // 3px of transparent border so the label starts on the same
             // vertical as the items, which carry .gn-sidenav-item's border-left
@@ -37,7 +41,16 @@ function Group({ label, children }: { label?: string; children: React.ReactNode 
             letterSpacing: "0.12em",
           }}
         >
-          {label}
+          <span>{label}</span>
+          {action && (
+            <button
+              type="button"
+              onClick={action}
+              className="ml-auto text-[10px] normal-case tracking-normal text-muted transition-colors hover:text-ink"
+            >
+              Mark all read
+            </button>
+          )}
         </div>
       )}
       {children}
@@ -96,6 +109,7 @@ export function ReadingQueue() {
   const openDoc = useStore((s) => s.openDoc);
   const goChanges = useStore((s) => s.goChanges);
   const goInbox = useStore((s) => s.goInbox);
+  const markReadMany = useStore((s) => s.markReadMany);
   const view = useStore((s) => s.view);
   const openId = useStore((s) => s.openDocId);
   const showEmpty = useStore((s) => s.showEmptySections);
@@ -136,7 +150,12 @@ export function ReadingQueue() {
       </Group>
 
       {(updates.length > 0 || showEmpty) && (
-        <Group label="Updates">
+        <Group
+          label="Updates"
+          action={updates.length ? () => {
+            void markReadMany(updates.map((d) => d.docId)).catch((e) => console.error("mark all read failed", e));
+          } : undefined}
+        >
           {updates.length > 0
             ? updates.map((d) => (
                 <Item
@@ -155,7 +174,12 @@ export function ReadingQueue() {
       )}
 
       {(unread.length > 0 || showEmpty) && (
-        <Group label="Unread">
+        <Group
+          label="Unread"
+          action={unread.length ? () => {
+            void markReadMany(unread.map((d) => d.docId)).catch((e) => console.error("mark all read failed", e));
+          } : undefined}
+        >
           {unread.length > 0
             ? unread.map((d) => (
                 <Item

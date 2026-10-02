@@ -286,6 +286,28 @@ pub fn mark_read(root: &Path, doc_id: &str) -> Result<Db, String> {
     Ok(db)
 }
 
+pub fn mark_read_many(root: &Path, doc_ids: &[String]) -> Result<Db, String> {
+    mark_read_many_with(root, doc_ids, db::save)
+}
+
+fn mark_read_many_with(
+    root: &Path,
+    doc_ids: &[String],
+    save: impl FnOnce(&Path, &Db) -> Result<(), String>,
+) -> Result<Db, String> {
+    let mut db = db::load(root);
+    for doc_id in doc_ids {
+        let e = db
+            .docs
+            .get_mut(doc_id)
+            .ok_or_else(|| format!("unknown doc: {doc_id}"))?;
+        e.last_read_version = e.current_version;
+        e.last_decided_version = e.current_version;
+    }
+    save(root, &db)?;
+    Ok(db)
+}
+
 pub fn accept_change(root: &Path, doc_id: &str) -> Result<Db, String> {
     let mut db = db::load(root);
     let e = db
@@ -481,6 +503,37 @@ mod tests {
         let r = diff(&root, "note.md", 1, 2).unwrap();
         assert!(r.ops.iter().any(|o| o.op == "del" && o.text.contains("world")));
         assert!(r.ops.iter().any(|o| o.op == "ins" && o.text.contains("rust")));
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn mark_read_many_updates_current_versions_and_saves_once() {
+        let root = temp_vault();
+        std::fs::write(root.join("one.md"), "# One\nv1").unwrap();
+        std::fs::write(root.join("two.md"), "# Two\nv1").unwrap();
+        scan(&root).unwrap();
+
+        std::fs::write(root.join("one.md"), "# One\nv2").unwrap();
+        std::fs::write(root.join("two.md"), "# Two\nv2").unwrap();
+        scan(&root).unwrap();
+
+        let mut saves = 0;
+        let db = mark_read_many_with(&root, &["one.md".into(), "two.md".into()], |root, db| {
+            saves += 1;
+            db::save(root, db)
+        })
+        .unwrap();
+
+        assert_eq!(saves, 1);
+        for id in ["one.md", "two.md"] {
+            let doc = &db.docs[id];
+            assert_eq!(doc.last_read_version, doc.current_version);
+            assert_eq!(doc.last_decided_version, doc.current_version);
+        }
+        let saved = db::load(&root);
+        assert_eq!(saved.docs["one.md"].last_read_version, 2);
+        assert_eq!(saved.docs["two.md"].last_read_version, 2);
 
         std::fs::remove_dir_all(&root).ok();
     }

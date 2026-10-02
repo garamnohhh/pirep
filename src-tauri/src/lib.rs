@@ -63,6 +63,7 @@ pub fn run() {
             commands::read_doc,
             commands::write_doc,
             commands::mark_read,
+            commands::mark_read_many,
             commands::list_updates,
             commands::diff,
             commands::list_changes,

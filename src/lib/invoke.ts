@@ -7,6 +7,7 @@ export const api = {
   writeDoc: (docId: string, content: string) =>
     invoke<Db>("write_doc", { docId, content }),
   markRead: (docId: string) => invoke<Db>("mark_read", { docId }),
+  markReadMany: (docIds: string[]) => invoke<Db>("mark_read_many", { docIds }),
   listUpdates: () => invoke<DocEntry[]>("list_updates"),
   diff: (docId: string, from: number, to: number) =>
     invoke<DiffResult>("diff", { docId, from, to }),
