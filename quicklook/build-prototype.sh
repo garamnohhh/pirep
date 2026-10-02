@@ -62,6 +62,7 @@ codesign -d --entitlements :- "$EXT" 2>&1
 open -n -gj -a "$APP"
 sleep 2
 osascript -e "tell application id \"$APP_ID\" to quit"
+qlmanage -r
 echo "Registered Quick Look extension:"
 pluginkit -m -v -i "$EXT_ID"
 echo "Prototype app: $APP"

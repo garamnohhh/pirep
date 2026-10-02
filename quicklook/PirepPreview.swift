@@ -6,6 +6,7 @@ import WebKit
 @objc(PirepPreviewViewController)
 final class PirepPreviewViewController: NSViewController, QLPreviewingController, WKNavigationDelegate {
     private var webView: WKWebView!
+    private let errorLabel = NSTextField(wrappingLabelWithString: "")
     private var pendingMarkdown: String?
 
     override func loadView() {
@@ -16,12 +17,32 @@ final class PirepPreviewViewController: NSViewController, QLPreviewingController
 
         webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = self
-        view = webView
+        let container = NSView()
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        errorLabel.translatesAutoresizingMaskIntoConstraints = false
+        errorLabel.alignment = .center
+        errorLabel.textColor = .secondaryLabelColor
+        errorLabel.isHidden = true
+        container.addSubview(webView)
+        container.addSubview(errorLabel)
+        NSLayoutConstraint.activate([
+            webView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            webView.topAnchor.constraint(equalTo: container.topAnchor),
+            webView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            errorLabel.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            errorLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            errorLabel.leadingAnchor.constraint(greaterThanOrEqualTo: container.leadingAnchor, constant: 24),
+            errorLabel.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor, constant: -24),
+        ])
+        view = container
     }
 
     func preparePreviewOfFile(at url: URL, completionHandler: @escaping (Error?) -> Void) {
         do {
             _ = view
+            webView.isHidden = false
+            errorLabel.isHidden = true
             pendingMarkdown = try String(contentsOf: url, encoding: .utf8)
             let renderer = Bundle.main.resourceURL!.appendingPathComponent("Renderer/index.html")
             webView.loadFileURL(renderer, allowingReadAccessTo: renderer.deletingLastPathComponent())
@@ -37,6 +58,26 @@ final class PirepPreviewViewController: NSViewController, QLPreviewingController
               let json = String(data: data, encoding: .utf8) else { return }
         pendingMarkdown = nil
         webView.evaluateJavaScript("window.renderQuickLook && window.renderQuickLook((\(json))[0])")
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        show(error)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        show(error)
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        show(NSError(domain: "PirepPreview", code: 1, userInfo: [
+            NSLocalizedDescriptionKey: "The web content process terminated.",
+        ]))
+    }
+
+    private func show(_ error: Error) {
+        errorLabel.stringValue = "Preview unavailable\n\(error.localizedDescription)"
+        webView.isHidden = true
+        errorLabel.isHidden = false
     }
 
     func webView(
