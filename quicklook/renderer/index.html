@@ -7,6 +7,18 @@
   </head>
   <body>
     <div id="root">pirep preview loading…</div>
+    <script>
+      function showPreviewError(message) {
+        const root = document.getElementById("root");
+        if (root) root.textContent = `Preview error: ${message}`;
+      }
+      window.onerror = (_message, _source, _line, _column, error) => {
+        showPreviewError(error?.stack || String(_message));
+      };
+      window.onunhandledrejection = ({ reason }) => {
+        showPreviewError(reason instanceof Error ? reason.stack || reason.message : String(reason));
+      };
+    </script>
     <script type="module" src="/main.tsx"></script>
   </body>
 </html>
