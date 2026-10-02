@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../../store";
 import { api } from "../../lib/invoke";
 import { getHighlighter, normalizeLang } from "../../lib/shiki";
@@ -10,7 +10,11 @@ import type { SlideKind } from "../../lib/slides";
 import { SlideshowOverlay } from "./SlideshowOverlay";
 import { EditorView } from "@codemirror/view";
 import { openWithOtherApp, revealInFinder } from "../../lib/handoff";
-import { previewKeyFromMessage } from "../../lib/previewKeys";
+import {
+  previewExternalUrlFromMessage, previewKeyFromMessage, previewLocationFromMessage,
+  previewNavigationAction, previewPageChanged,
+} from "../../lib/previewKeys";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { ExtChip } from "../ui/ExtChip";
 
 // svg moved out of IMAGE_EXTS so it becomes editable text
@@ -106,26 +110,42 @@ function FileEditorHost({
   return <div ref={host} />;
 }
 
-function HtmlPreview({ src, name }: { src: string; name: string }) {
-  const frame = useRef<HTMLIFrameElement>(null);
+function HtmlPreview({
+  src, name, frame, onLocation,
+}: {
+  src: string;
+  name: string;
+  frame: { current: HTMLIFrameElement | null };
+  onLocation: (href: string) => void;
+}) {
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       const source = frame.current?.contentWindow;
       if (!source) return;
+      const externalUrl = previewExternalUrlFromMessage(event, source);
+      if (externalUrl) { void openUrl(externalUrl).catch(() => console.error("Could not open external preview link")); return; }
+      const location = previewLocationFromMessage(event, source);
+      if (location) { onLocation(location); return; }
       const key = previewKeyFromMessage(event, source);
       if (key) {
+        const action = previewNavigationAction(key);
+        if (action) {
+          source.postMessage({ type: "pirep-preview-command", action }, "pirepfile://localhost");
+          return;
+        }
         window.dispatchEvent(new KeyboardEvent("keydown", { ...key, bubbles: true, cancelable: true }));
       }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [frame, onLocation]);
 
   return (
     <iframe
       ref={frame}
       src={src}
+      onLoad={() => frame.current?.contentWindow?.postMessage({ type: "pirep-preview-request-state" }, "pirepfile://localhost")}
       sandbox="allow-scripts allow-same-origin allow-forms"
       style={{ flex: 1, border: "none", width: "100%", height: "100%" }}
       title={name}
@@ -143,11 +163,15 @@ function ViewerHeader({
   note,
   relPath,
   onSlides,
+  onPreviewBack,
+  onPreviewOriginal,
 }: {
   name: string;
   note: string;
   relPath: string;
   onSlides?: () => void;
+  onPreviewBack?: () => void;
+  onPreviewOriginal?: () => void;
 }) {
   // "Open ↗" said nothing about what it opened, and it said nothing when it
   // failed either — the promise was fired and dropped. Both fixed: the label
@@ -189,6 +213,10 @@ function ViewerHeader({
         </span>
       )}
       <span className="ml-auto flex items-center gap-2">
+        {onPreviewBack && onPreviewOriginal && <>
+          <button onClick={onPreviewBack} className={btn} style={{ height: 32 }} title="Back in HTML preview" aria-label="Back in HTML preview">←</button>
+          <button onClick={onPreviewOriginal} className={btn} style={{ height: 32 }} title="Return to original HTML">Original</button>
+        </>}
         <button onClick={() => { void handOff(); }} className={btn} style={{ height: 32 }}>
           {inBrowser ? "Open in browser ↗" : "Open in default app ↗"}
         </button>
@@ -300,8 +328,15 @@ function MmdPreview({ text }: { text: string }) {
   );
 }
 
-function RenderView({ text, fileExt, name, htmlSrc }: { text: string; fileExt: string; name: string; htmlSrc?: string }) {
-  if ((fileExt === "html" || fileExt === "htm") && htmlSrc) return <HtmlPreview src={htmlSrc} name={name} />;
+function RenderView({
+  text, fileExt, name, htmlSrc, frame, onLocation, reset,
+}: {
+  text: string; fileExt: string; name: string; htmlSrc?: string;
+  frame: { current: HTMLIFrameElement | null }; onLocation: (href: string) => void; reset: number;
+}) {
+  if ((fileExt === "html" || fileExt === "htm") && htmlSrc) {
+    return <HtmlPreview key={`${htmlSrc}:${reset}`} src={htmlSrc} name={name} frame={frame} onLocation={onLocation} />;
+  }
   if (fileExt === "svg") return <SvgPreview text={text} name={name} />;
   if (fileExt === "csv" || fileExt === "tsv") return <CsvPreview text={text} fileExt={fileExt} />;
   if (fileExt === "mmd") return <MmdPreview text={text} />;
@@ -316,6 +351,9 @@ export function FileViewer() {
   const editorWidth = useStore((s) => s.editorWidth);
   const vaultRoot = useStore((s) => s.vaultRoot);
   const [showSlides, setShowSlides] = useState(false);
+  const previewFrame = useRef<HTMLIFrameElement>(null);
+  const [previewLocation, setPreviewLocation] = useState<{ src: string; href: string } | null>(null);
+  const [previewReset, setPreviewReset] = useState(0);
 
   const [b64, setB64] = useState<string | null>(null);
   const [text, setText] = useState<string>("");
@@ -340,6 +378,15 @@ export function FileViewer() {
   const isHtml = fileExt === "html" || fileExt === "htm";
 
   const htmlSrc = isHtml && vaultRoot ? assetFileHref(vaultRoot, relPath) : undefined;
+  const onPreviewLocation = useCallback((href: string) => {
+    if (htmlSrc) setPreviewLocation({ src: htmlSrc, href });
+  }, [htmlSrc]);
+  const currentPreviewLocation = previewLocation && previewLocation.src === htmlSrc ? previewLocation.href : null;
+  const previewHasNavigated = !!htmlSrc && !!currentPreviewLocation && previewPageChanged(currentPreviewLocation, htmlSrc);
+  const previewCommand = (action: "back" | "forward") => previewFrame.current?.contentWindow?.postMessage(
+    { type: "pirep-preview-command", action }, "pirepfile://localhost",
+  );
+  const returnPreviewToOriginal = () => { setPreviewLocation(null); setPreviewReset((n) => n + 1); };
 
   // Slideshow is offered only for HTML that actually looks like slides, and for
   // PDFs (already paginated). Prose HTML gets no button — we don't guess breaks.
@@ -409,6 +456,8 @@ export function FileViewer() {
       note={note}
       relPath={relPath}
       onSlides={slideKind ? () => setShowSlides(true) : undefined}
+      onPreviewBack={previewHasNavigated ? () => previewCommand("back") : undefined}
+      onPreviewOriginal={previewHasNavigated ? returnPreviewToOriginal : undefined}
     />
   );
 
@@ -431,7 +480,8 @@ export function FileViewer() {
         <div className="flex min-w-0 flex-1 flex-col">
           {header("rendered · the document's own styles")}
           <div className="relative flex min-h-0 flex-1">
-            <RenderView text={text} fileExt={fileExt} name={name} htmlSrc={htmlSrc} />
+            <RenderView text={text} fileExt={fileExt} name={name} htmlSrc={htmlSrc}
+              frame={previewFrame} onLocation={onPreviewLocation} reset={previewReset} />
           </div>
           {slideshow}
         </div>

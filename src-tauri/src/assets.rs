@@ -16,8 +16,12 @@ let slides=[],index=0,presenting=false;
 function state(){parent.postMessage({type:'pirep-slides-state',current:index+1,total:slides.length},'*')}
 function show(n){if(!slides.length)return;presenting=true;index=Math.max(0,Math.min(n,slides.length-1));document.documentElement.style.cssText='height:100%;overflow:hidden;background:#111';document.body.style.cssText='height:100%;margin:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#111';slides.forEach((el,i)=>el.style.display=i===index?'':'none');const el=slides[index],w=el.offsetWidth||1,h=el.offsetHeight||1;el.style.transformOrigin='center';el.style.transform='scale('+Math.min(innerWidth/w,innerHeight/h,1)+')';state()}
 addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='pirep-slides-command')return;const d=e.data;slides=[];for(const s of selectors){const found=[...document.querySelectorAll(s)];if(found.length>=2){slides=found;break}}if(!slides.length)return;switch(d.action){case'next':show(index+1);break;case'prev':show(index-1);break;case'first':show(0);break;case'last':show(slides.length-1);break;case'goto':if(Number.isInteger(d.index))show(d.index);break}});
-addEventListener('keydown',e=>{if(e.key==='Escape'||e.metaKey||e.ctrlKey||e.altKey||presenting&&['ArrowRight','ArrowLeft','PageDown','PageUp',' '].includes(e.key))parent.postMessage({type:'pirep-keydown',key:e.key,metaKey:e.metaKey,ctrlKey:e.ctrlKey,altKey:e.altKey,shiftKey:e.shiftKey},'*')});
+addEventListener('keydown',e=>{const nav=e.metaKey&&!e.ctrlKey&&!e.altKey&&!e.shiftKey&&(e.key==='['||e.key===']');if(nav)e.preventDefault();if(e.key==='Escape'||e.metaKey||e.ctrlKey||e.altKey||presenting&&['ArrowRight','ArrowLeft','PageDown','PageUp',' '].includes(e.key))parent.postMessage({type:'pirep-keydown',key:e.key,metaKey:e.metaKey,ctrlKey:e.ctrlKey,altKey:e.altKey,shiftKey:e.shiftKey},'*')},true);
 document.addEventListener('click',()=>{if(presenting)show(index+1)});
+function locationState(){parent.postMessage({type:'pirep-preview-location',href:location.href},'*')}
+addEventListener('pageshow',locationState);addEventListener('popstate',locationState);addEventListener('hashchange',locationState);locationState();
+addEventListener('message',e=>{if(e.source!==parent)return;const d=e.data;if(d?.type==='pirep-preview-request-state')locationState();if(d?.type==='pirep-preview-command'){if(d.action==='back')history.back();else if(d.action==='forward')history.forward()}});
+document.addEventListener('click',e=>{const a=e.target instanceof Element?e.target.closest('a[href]'):null;if(!a)return;let url;try{url=new URL(a.href,location.href)}catch{e.preventDefault();return}if(url.protocol==='https:'){e.preventDefault();parent.postMessage({type:'pirep-external-link',url:url.href},'*');return}if(url.protocol==='pirepfile:'&&url.hostname==='localhost'){if(url.pathname===location.pathname&&url.search===location.search)return;e.preventDefault();location.assign(url.href);return}e.preventDefault()},true);
 })()</script>"#;
 
 fn inject_key_bridge(mut html: Vec<u8>) -> Vec<u8> {
@@ -253,5 +257,8 @@ mod tests {
         assert!(injected.contains("'section[data-label]'"));
         assert!(injected.contains("'pirep-slides-command'"));
         assert!(injected.contains("'pirep-slides-state'"));
+        assert!(injected.contains("'pirep-preview-location'"));
+        assert!(injected.contains("'pirep-external-link'"));
+        assert!(injected.contains("'pirep-preview-command'"));
     }
 }
