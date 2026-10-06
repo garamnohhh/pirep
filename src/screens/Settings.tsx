@@ -11,6 +11,7 @@ import type { Template } from "../store";
 import type { ShortcutsMap } from "../store";
 import { captureMode } from "../lib/captureMode";
 import { modalStack } from "../lib/modalStack";
+import { waitForMarkdownDefault, type MarkdownDefaultApp } from "../lib/defaultApp";
 
 type Tab = "appearance" | "editor" | "base" | "tracking" | "templates" | "account" | "shortcuts" | "about";
 
@@ -284,13 +285,13 @@ function BaseTab() {
   const docs = useDocs();
   const nonMd = useStore((s) => s.nonMdFiles);
   const [error, setError] = useState<string | null>(null);
-  const [markdownDefault, setMarkdownDefault] = useState<{ name: string | null; isSelf: boolean } | null>(null);
+  const [markdownDefault, setMarkdownDefault] = useState<MarkdownDefaultApp | null>(null);
   const [markdownDefaultError, setMarkdownDefaultError] = useState(false);
   const [changingMarkdownDefault, setChangingMarkdownDefault] = useState(false);
 
   const refreshMarkdownDefault = useCallback(async () => {
     try {
-      setMarkdownDefault(await invoke("get_markdown_default_app"));
+      setMarkdownDefault(await invoke<MarkdownDefaultApp>("get_markdown_default_app"));
     } catch {
       setMarkdownDefault(null);
     }
@@ -307,7 +308,11 @@ function BaseTab() {
     setMarkdownDefaultError(false);
     try {
       await invoke("set_markdown_default_app");
-      await refreshMarkdownDefault();
+      const becameDefault = await waitForMarkdownDefault(
+        () => invoke<MarkdownDefaultApp>("get_markdown_default_app"),
+        setMarkdownDefault,
+      );
+      if (!becameDefault) setMarkdownDefaultError(true);
     } catch {
       setMarkdownDefaultError(true);
     } finally {
@@ -390,7 +395,7 @@ function BaseTab() {
                 className="shrink-0 border border-line bg-surface px-3 text-[12.5px] font-semibold text-ink hover:border-mid disabled:opacity-50"
                 style={{ height: 32 }}
               >
-                Make pirep default
+                {changingMarkdownDefault ? "Changing…" : "Make pirep default"}
               </button>
             )}
           </div>
