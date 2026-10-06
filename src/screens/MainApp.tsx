@@ -44,6 +44,8 @@ export function MainApp() {
   const view = useStore((s) => s.view);
   const openDocId = useStore((s) => s.openDocId);
   const openFilePath = useStore((s) => s.openFilePath);
+  const externalFilePath = useStore((s) => s.externalFilePath);
+  const addExternalFolderAsBase = useStore((s) => s.addExternalFolderAsBase);
   const docs = useDocs();
 
   if (view === "diff") return <AppShell noPad noSidebar><DiffView /></AppShell>;
@@ -52,7 +54,16 @@ export function MainApp() {
   if (view === "tag-results") return <AppShell noPad noSidebar><TagResults /></AppShell>;
   if (view === "file-viewer")
     return (
-      <AppShell>
+      <AppShell noSidebar={!!externalFilePath}>
+        {externalFilePath && (
+          <button
+            type="button"
+            onClick={() => void addExternalFolderAsBase()}
+            className="shrink-0 border-b border-line bg-tertiary px-4 py-2 text-left text-[12px] text-slate hover:text-ink"
+          >
+            Outside your Base · Add this folder as a Base
+          </button>
+        )}
         <ContentBoundary resetKey={openFilePath}>
           <div className="flex h-full flex-col min-h-0"><FileViewer /></div>
         </ContentBoundary>

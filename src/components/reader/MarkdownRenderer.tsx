@@ -118,7 +118,7 @@ function openInVault(
   openFile: (rel: string) => void,
   fromDocId?: string,
 ) {
-  if (/\.md$/i.test(rel)) {
+  if (/\.(md|markdown)$/i.test(rel)) {
     const docId = rel.toLowerCase();
     const hit = db.docs[docId] ? docId : resolveWiki(db, rel, fromDocId);
     if (hit) { openDoc(hit); return; }
@@ -134,7 +134,8 @@ interface Props {
 }
 
 export function MarkdownRenderer({ source, docPath, onHeadings, onSourceChange }: Props) {
-  const vaultRoot = useStore((s) => s.vaultRoot);
+  const externalFilePath = useStore((s) => s.externalFilePath);
+  const vaultRoot = useStore((s) => externalFilePath ? null : s.vaultRoot);
   const { segments, headings } = useMemo(() => {
     const parsed = parseDoc(source);
     if (vaultRoot && docPath) {
@@ -151,8 +152,8 @@ export function MarkdownRenderer({ source, docPath, onHeadings, onSourceChange }
     }
     return parsed;
   }, [source, vaultRoot, docPath]);
-  const db = useStore((s) => s.db);
-  const openDocId = useStore((s) => s.openDocId);
+  const db = useStore((s) => externalFilePath ? null : s.db);
+  const openDocId = useStore((s) => externalFilePath ? null : s.openDocId);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
 
@@ -176,6 +177,10 @@ export function MarkdownRenderer({ source, docPath, onHeadings, onSourceChange }
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     const target = e.target as HTMLElement;
+    if (useStore.getState().externalFilePath) {
+      if (target.closest("a")) e.preventDefault();
+      return;
+    }
 
     // checkbox toggle in task list items
     const li = target.closest("li.task-list-item");

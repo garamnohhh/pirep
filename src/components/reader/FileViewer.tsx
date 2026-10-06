@@ -8,6 +8,7 @@ import { registerFindTarget } from "../../lib/find";
 import { assetFileHref, detectSlides } from "../../lib/slides";
 import type { SlideKind } from "../../lib/slides";
 import { SlideshowOverlay } from "./SlideshowOverlay";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 import { EditorView } from "@codemirror/view";
 import { openWithOtherApp, revealInFinder } from "../../lib/handoff";
 import {
@@ -347,6 +348,7 @@ const SAVE_DELAY = 1200;
 
 export function FileViewer() {
   const relPath = useStore((s) => s.openFilePath)!;
+  const externalFilePath = useStore((s) => s.externalFilePath);
   const fileEditMode = useStore((s) => s.fileEditMode);
   const editorWidth = useStore((s) => s.editorWidth);
   const vaultRoot = useStore((s) => s.vaultRoot);
@@ -397,6 +399,7 @@ export function FileViewer() {
   const maxW = editorWidth === "wide" ? "var(--spacing-reading-wide)" : "var(--spacing-reading)";
 
   useEffect(() => {
+    if (externalFilePath) return;
     setB64(null); setText(""); setError(null);
     if (saveTimer.current) clearTimeout(saveTimer.current);
 
@@ -409,7 +412,11 @@ export function FileViewer() {
       }
     }).catch((e) => setError(String(e)));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [relPath]);
+  }, [relPath, externalFilePath]);
+
+  if (externalFilePath) {
+    return <ExternalMarkdownFile path={externalFilePath} fileEditMode={fileEditMode} />;
+  }
 
   function handleEdit(value: string) {
     draft.current = value;
@@ -538,6 +545,56 @@ export function FileViewer() {
   }
 
   return <OpaqueFile relPath={relPath} name={name} />;
+}
+
+function ExternalMarkdownFile({ path, fileEditMode }: { path: string; fileEditMode: boolean }) {
+  const [source, setSource] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const draft = useRef("");
+  const timer = useRef<number | null>(null);
+  const name = path.split("/").pop() ?? path;
+
+  useEffect(() => {
+    let cancelled = false;
+    api.readExternalMarkdown(path).then((text) => {
+      if (cancelled) return;
+      draft.current = text;
+      setSource(text);
+    }).catch((reason) => { if (!cancelled) setError(String(reason)); });
+    return () => {
+      cancelled = true;
+      if (timer.current) {
+        window.clearTimeout(timer.current);
+        void api.writeExternalMarkdown(path, draft.current).catch((reason) =>
+          console.error("Could not save external Markdown:", reason),
+        );
+      }
+    };
+  }, [path]);
+
+  function onChange(value: string) {
+    draft.current = value;
+    setSource(value);
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      void api.writeExternalMarkdown(path, draft.current).catch((reason) => setError(String(reason)));
+    }, SAVE_DELAY);
+  }
+
+  if (error) return <div className="p-8 text-sm text-muted">{error}</div>;
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="doc-scroll min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto px-[32px] pt-16 pb-[120px]" style={{ maxWidth: "var(--spacing-reading)" }}>
+          {fileEditMode ? (
+            <FileEditorHost key={path} filename={name} text={source} onChange={onChange} />
+          ) : (
+            <MarkdownRenderer source={source} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Nothing to render here, so the screen's job is to get the file somewhere that

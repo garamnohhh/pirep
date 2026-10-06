@@ -118,7 +118,9 @@ pub fn scan(root: &Path) -> Result<Db, String> {
         if !p.is_file() || p.starts_with(&pirep) {
             continue;
         }
-        if p.extension().and_then(|e| e.to_str()) != Some("md") {
+        if !p.extension().and_then(|e| e.to_str()).is_some_and(|e| {
+            e.eq_ignore_ascii_case("md") || e.eq_ignore_ascii_case("markdown")
+        }) {
             continue;
         }
 
@@ -505,6 +507,15 @@ mod tests {
         assert!(r.ops.iter().any(|o| o.op == "ins" && o.text.contains("rust")));
 
         std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn scan_indexes_markdown_extension_as_a_document() {
+        let root = temp_vault();
+        std::fs::write(root.join("notes.markdown"), "# Notes\nbody").unwrap();
+        let db = scan(&root).unwrap();
+        assert!(db.docs.contains_key("notes.markdown"));
+        std::fs::remove_dir_all(root).ok();
     }
 
     #[test]

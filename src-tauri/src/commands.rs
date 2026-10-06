@@ -135,6 +135,25 @@ fn write_raw_file_at(root: &Path, rel_path: &str, content: &str) -> Result<(), S
     std::fs::write(vault_file(root, rel_path)?, content.as_bytes()).map_err(|e| e.to_string())
 }
 
+fn external_markdown_path(path: &str) -> Result<PathBuf, String> {
+    let path = Path::new(path).canonicalize().map_err(|e| e.to_string())?;
+    let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    if !path.is_file() || !(extension.eq_ignore_ascii_case("md") || extension.eq_ignore_ascii_case("markdown")) {
+        return Err("not a Markdown file".to_string());
+    }
+    Ok(path)
+}
+
+#[tauri::command]
+pub fn read_external_markdown(path: String) -> Result<String, String> {
+    std::fs::read_to_string(external_markdown_path(&path)?).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn write_external_markdown(path: String, content: String) -> Result<(), String> {
+    std::fs::write(external_markdown_path(&path)?, content.as_bytes()).map_err(|e| e.to_string())
+}
+
 fn rename_raw_file_at(root: &Path, rel_path: &str, new_name: &str) -> Result<(), String> {
     let old = vault_file(root, rel_path)?;
     if Path::new(new_name).components().count() != 1
@@ -345,7 +364,9 @@ pub fn list_files(state: State<VaultState>) -> Result<Vec<String>, String> {
         let Ok(e) = entry else { continue };
         if !e.file_type().is_file() { continue }
         let p = e.path();
-        if p.extension().map(|e| e == "md").unwrap_or(false) { continue }
+        if p.extension().and_then(|e| e.to_str()).is_some_and(|e| {
+            e.eq_ignore_ascii_case("md") || e.eq_ignore_ascii_case("markdown")
+        }) { continue }
         if p.file_name().map(|n| n == ".DS_Store").unwrap_or(false) { continue }
         if let Ok(rel) = p.strip_prefix(&root) {
             if let Some(s) = rel.to_str() {
@@ -438,6 +459,23 @@ pub fn copy_diagram_image(app: tauri::AppHandle, svg: String) -> Result<(), Stri
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn external_markdown_write_changes_only_the_selected_file() {
+        let root = std::env::temp_dir().join(format!("pirep-external-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let file = root.join("outside.md");
+        let neighbor = root.join("neighbor.txt");
+        std::fs::write(&file, "before").unwrap();
+        std::fs::write(&neighbor, "untouched").unwrap();
+
+        write_external_markdown(file.to_string_lossy().into_owned(), "after".into()).unwrap();
+        assert_eq!(read_external_markdown(file.to_string_lossy().into_owned()).unwrap(), "after");
+        assert_eq!(std::fs::read_to_string(neighbor).unwrap(), "untouched");
+        assert!(!root.join(".pirep").exists());
+        assert_eq!(std::fs::read_dir(&root).unwrap().count(), 2);
+        std::fs::remove_dir_all(root).ok();
+    }
 
     // One user action arrives as a burst. Measured against a real watcher,
     // creating a folder holding a .html and two .md files produced 11 events in

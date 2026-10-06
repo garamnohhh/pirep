@@ -3,6 +3,24 @@ mod commands;
 mod vault;
 
 use commands::VaultState;
+use std::sync::Mutex;
+use tauri::{Emitter, Manager};
+
+#[derive(Default)]
+struct PendingOpenFiles(Mutex<PendingOpenFilesState>);
+
+#[derive(Default)]
+struct PendingOpenFilesState {
+    files: Vec<String>,
+    frontend_ready: bool,
+}
+
+#[tauri::command]
+fn take_pending_open_files(state: tauri::State<'_, PendingOpenFiles>) -> Vec<String> {
+    let mut pending = state.0.lock().expect("pending open files lock poisoned");
+    pending.frontend_ready = true;
+    std::mem::take(&mut pending.files)
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,6 +32,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(VaultState::default())
+        .manage(PendingOpenFiles::default())
         .setup(|app| {
             #[cfg(target_os = "macos")]
             {
@@ -82,7 +101,33 @@ pub fn run() {
             commands::write_raw_file,
             commands::rename_raw_file,
             commands::delete_raw_file,
+            commands::read_external_markdown,
+            commands::write_external_markdown,
+            take_pending_open_files,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = event {
+                let paths = urls.into_iter().filter_map(|url| url.to_file_path().ok())
+                    .map(|path| path.to_string_lossy().into_owned())
+                    .filter(|path| {
+                        path.rsplit_once('.').is_some_and(|(_, ext)| {
+                            ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown")
+                        })
+                    });
+                for path in paths {
+                    let state = app.state::<PendingOpenFiles>();
+                    let ready = {
+                        let mut pending = state.0.lock().expect("pending open files lock poisoned");
+                        if pending.frontend_ready { true } else {
+                            pending.files.push(path.clone());
+                            false
+                        }
+                    };
+                    if ready { let _ = app.emit("open-file-request", path); }
+                }
+            }
+        });
 }

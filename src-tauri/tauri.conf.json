@@ -30,6 +30,16 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown"],
+        "name": "Markdown document",
+        "mimeType": "text/markdown",
+        "role": "Editor",
+        "rank": "Alternate",
+        "contentTypes": ["net.daringfireball.markdown"]
+      }
+    ],
     "macOS": {
       "signingIdentity": "-"
     },

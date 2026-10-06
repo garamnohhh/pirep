@@ -8,6 +8,8 @@ import { Onboarding } from "./screens/Onboarding";
 import { MainApp } from "./screens/MainApp";
 import { CommandPalette } from "./components/ui/CommandPalette";
 import { FindBar } from "./components/ui/FindBar";
+import { classifyFileBase } from "./lib/open-file";
+import { api } from "./lib/invoke";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { caught: boolean }> {
   state = { caught: false };
@@ -39,6 +41,7 @@ function App() {
 
   const vaultRoot = useStore((s) => s.vaultRoot);
   const db = useStore((s) => s.db);
+  const externalFilePath = useStore((s) => s.externalFilePath);
   const clearVault = useStore((s) => s.clearVault);
   const didStartScan = useRef(false);
 
@@ -49,6 +52,49 @@ function App() {
     const p = listen("vault-changed", () => useStore.getState().rescan());
     const q = listen("files-changed", () => useStore.getState().loadNonMdFiles());
     return () => { p.then((fn) => fn()); q.then((fn) => fn()); };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    const recentlyOpened = new Map<string, number>();
+    const openPath = async (path: string) => {
+      if (disposed) return;
+      if (!/\.(md|markdown)$/i.test(path)) return;
+      const key = path;
+      const now = Date.now();
+      if (now - (recentlyOpened.get(key) ?? 0) < 1500) return;
+      recentlyOpened.set(key, now);
+      const state = useStore.getState();
+      const match = classifyFileBase(path, state.vaultRoot, state.vaults);
+      if (match.kind === "outside") {
+        state.openExternalFile(path);
+        return;
+      }
+      try {
+        await useStore.getState().openVault(match.base);
+        if (disposed) return;
+        const relative = path.slice(match.base.replace(/\/$/, "").length + 1);
+        const id = relative.toLowerCase();
+        const current = useStore.getState();
+        if (current.db?.docs[id]) current.openDoc(id);
+        else current.openFile(relative);
+        current.revealInTree();
+      } catch (error) {
+        console.error("Could not open Markdown file:", error);
+      }
+    };
+    void listen<string>("open-file-request", (event) => { void openPath(event.payload); }).then((stop) => {
+      unlisten = stop;
+      if (disposed) { stop(); return []; }
+      return api.takePendingOpenFiles();
+    }).then((paths) => {
+      if (!disposed) paths.forEach((path) => { void openPath(path); });
+    }).catch((error) => console.error("Could not read pending file opens:", error));
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
   }, []);
 
   // Safety net for the events macOS drops on its own (sleep/wake, heavy load,
@@ -80,9 +126,9 @@ function App() {
     }
   }, []);
 
-  if (!vaultRoot) return <Onboarding />;
+  if (!vaultRoot && !externalFilePath) return <Onboarding />;
   // brief gap before first scan resolves — escapable, never a dead end
-  if (!db)
+  if (!db && !externalFilePath)
     return (
       <div className="grid h-full place-items-center gap-3 text-center text-muted">
         <span>Loading your Base…</span>

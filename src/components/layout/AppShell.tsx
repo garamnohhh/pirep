@@ -48,6 +48,7 @@ export function AppShell({
 }) {
   const sidebarVisible = useStore((s) => s.sidebarVisible);
   const focusMode = useStore((s) => s.focusMode);
+  const externalFilePath = useStore((s) => s.externalFilePath);
   const toggleSidebar = useStore((s) => s.toggleSidebar);
   const { sidebarFits } = useViewport();
 
@@ -56,7 +57,7 @@ export function AppShell({
   return (
     <div className="flex h-full flex-col bg-paper text-ink">
       <TitleBar />
-      <UpdateBanner />
+      {!externalFilePath && <UpdateBanner />}
       <div className="relative flex min-h-0 flex-1">
         {showSidebar && sidebarFits && <Sidebar />}
         <main className={`min-w-0 flex-1 flex flex-col min-h-0 ${noPad ? "" : "overflow-y-auto"}`}>

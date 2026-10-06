@@ -117,6 +117,7 @@ interface AppState {
   previousView: View | null;
   openDocId: string | null;
   openFilePath: string | null;
+  externalFilePath: string | null;
   fileEditMode: boolean;
   mode: Mode;
   readLockVersion: number | null;
@@ -182,6 +183,8 @@ interface AppState {
   openDoc: (docId: string) => void;
   followWikiLink: (raw: string) => Promise<void>;
   openFile: (relPath: string) => void;
+  openExternalFile: (path: string) => void;
+  addExternalFolderAsBase: () => Promise<void>;
   toggleFileEditMode: () => void;
   loadNonMdFiles: () => Promise<void>;
   goInbox: () => void;
@@ -220,6 +223,7 @@ function _build() { return create<AppState>()(
       previousView: null,
       openDocId: null,
       openFilePath: null,
+      externalFilePath: null,
       fileEditMode: false,
       mode: "read",
       readLockVersion: null,
@@ -397,6 +401,7 @@ function _build() { return create<AppState>()(
             view: docsList(db).length ? "inbox" : "onboarding",
             openDocId: null,
             openFilePath: null,
+            externalFilePath: null,
           }));
           await get().loadNonMdFiles();
         } catch (e) {
@@ -434,6 +439,7 @@ function _build() { return create<AppState>()(
         set({
           openDocId: docId,
           openFilePath: null,
+          externalFilePath: null,
           view: "reader",
           mode: "read",
           readLockVersion: doc?.lastReadVersion ?? doc?.currentVersion ?? null,
@@ -472,7 +478,28 @@ function _build() { return create<AppState>()(
       },
 
       openFile: (relPath) => {
-        set({ openFilePath: relPath, openDocId: null, view: "file-viewer", fileEditMode: false });
+        set({ openFilePath: relPath, externalFilePath: null, openDocId: null, view: "file-viewer", fileEditMode: false });
+      },
+
+      openExternalFile: (path) => set({
+        openFilePath: path,
+        externalFilePath: path,
+        openDocId: null,
+        view: "file-viewer",
+        fileEditMode: false,
+        mode: "read",
+      }),
+
+      addExternalFolderAsBase: async () => {
+        const path = get().externalFilePath;
+        if (!path) return;
+        const folder = path.slice(0, path.lastIndexOf("/")) || "/";
+        await get().openVault(folder);
+        const relative = path.startsWith(`${folder}/`) ? path.slice(folder.length + 1) : path.slice(1);
+        const id = relative.toLowerCase();
+        if (get().db?.docs[id]) get().openDoc(id);
+        else get().openFile(relative);
+        get().revealInTree();
       },
 
       toggleFileEditMode: () => set((s) => ({ fileEditMode: !s.fileEditMode })),
@@ -480,6 +507,7 @@ function _build() { return create<AppState>()(
       goInbox: () => set({ view: "inbox", openDocId: null }),
 
       goChanges: () => {
+        if (get().externalFilePath) return;
         const current = get().view;
         set({ view: "diff", diffTarget: null, previousView: current });
       },

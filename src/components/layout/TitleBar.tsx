@@ -52,6 +52,7 @@ export function TitleBar() {
   const toggleMode = useStore((s) => s.toggleMode);
   const openDocId = useStore((s) => s.openDocId);
   const openFilePath = useStore((s) => s.openFilePath);
+  const externalFilePath = useStore((s) => s.externalFilePath);
   const fileEditMode = useStore((s) => s.fileEditMode);
   const toggleFileEditMode = useStore((s) => s.toggleFileEditMode);
   const activeTag = useStore((s) => s.activeTag);
@@ -79,12 +80,12 @@ export function TitleBar() {
       <div data-tauri-drag-region className="flex items-center gap-[14px] justify-self-start">
         <TrafficLights />
 
-        {!isSecondaryView && (
+        {!isSecondaryView && !externalFilePath && (
           <IconButton label="Toggle sidebar (⌘\)" onClick={toggleSidebar}>
             <SidebarIcon />
           </IconButton>
         )}
-        {!isSecondaryView && (
+        {!isSecondaryView && !externalFilePath && (
           <IconButton
             label={focusMode ? "Show side panels (⌘.)" : "Focus mode — text only (⌘.)"}
             onClick={toggleFocus}
@@ -106,7 +107,7 @@ export function TitleBar() {
           : inFileViewer
           ? (
             <>
-              <BaseMark onGoInbox={goInbox} />
+              {!externalFilePath && <BaseMark onGoInbox={goInbox} />}
               {/* the name keeps its extension and the chip sits beside it, the
                   way the addendum's tree and viewer header both do. Markdown is
                   the default, so it carries no chip in the header. */}

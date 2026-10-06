@@ -16,7 +16,7 @@
 // open is OPAQUE, whatever its extension.
 
 // Only `.md` is scanned into the Base as a document, so only `.md` is native.
-const NATIVE = ["md"];
+const NATIVE = ["md", "markdown"];
 
 // Mirrors FileViewer: IMAGE_EXTS ∪ pdf ∪ RENDER_EXTS ∪ TEXT_EXTS.
 const READABLE = [

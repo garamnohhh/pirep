@@ -37,6 +37,10 @@ export const api = {
     invoke<void>("open_vault_file", { relPath }),
   writeRawFile: (relPath: string, content: string) =>
     invoke<void>("write_raw_file", { relPath, content }),
+  readExternalMarkdown: (path: string) => invoke<string>("read_external_markdown", { path }),
+  writeExternalMarkdown: (path: string, content: string) =>
+    invoke<void>("write_external_markdown", { path, content }),
+  takePendingOpenFiles: () => invoke<string[]>("take_pending_open_files"),
   renameRawFile: (relPath: string, newName: string) =>
     invoke<void>("rename_raw_file", { relPath, newName }),
   deleteRawFile: (relPath: string) =>
