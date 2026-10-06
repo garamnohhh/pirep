@@ -291,7 +291,9 @@ function BaseTab() {
 
   const refreshMarkdownDefault = useCallback(async () => {
     try {
-      setMarkdownDefault(await invoke<MarkdownDefaultApp>("get_markdown_default_app"));
+      const app = await invoke<MarkdownDefaultApp>("get_markdown_default_app");
+      setMarkdownDefault(app);
+      if (app.isSelf) setMarkdownDefaultError(false);
     } catch {
       setMarkdownDefault(null);
     }

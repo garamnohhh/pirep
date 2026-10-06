@@ -7,7 +7,7 @@ export async function waitForMarkdownDefault(
   onUpdate: (app: MarkdownDefaultApp | null) => void,
   pause: (ms: number) => Promise<void> = delay,
 ): Promise<boolean> {
-  for (let attempt = 0; attempt < 10; attempt++) {
+  for (let attempt = 0; attempt < 30; attempt++) {
     await pause(500);
     let app: MarkdownDefaultApp | null = null;
     try {
