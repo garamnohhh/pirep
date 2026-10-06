@@ -1,5 +1,7 @@
 import { Component } from "react";
 import type { ReactNode } from "react";
+import { emitTo } from "@tauri-apps/api/event";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useStore, useDocs } from "../store";
 import { AppShell } from "../components/layout/AppShell";
 import { KnowledgeInbox } from "./KnowledgeInbox";
@@ -45,7 +47,6 @@ export function MainApp() {
   const openDocId = useStore((s) => s.openDocId);
   const openFilePath = useStore((s) => s.openFilePath);
   const externalFilePath = useStore((s) => s.externalFilePath);
-  const addExternalFolderAsBase = useStore((s) => s.addExternalFolderAsBase);
   const docs = useDocs();
 
   if (view === "diff") return <AppShell noPad noSidebar><DiffView /></AppShell>;
@@ -58,10 +59,13 @@ export function MainApp() {
         {externalFilePath && (
           <button
             type="button"
-            onClick={() => void addExternalFolderAsBase()}
+            onClick={() => void emitTo("main", "add-external-file-as-base", {
+              path: externalFilePath,
+              sourceLabel: getCurrentWebviewWindow().label,
+            })}
             className="shrink-0 border-b border-line bg-tertiary px-4 py-2 text-left text-[12px] text-slate hover:text-ink"
           >
-            Outside your Base · Add this folder as a Base
+            Add this folder as a Base
           </button>
         )}
         <ContentBoundary resetKey={openFilePath}>

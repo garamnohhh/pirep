@@ -202,11 +202,11 @@ export function TitleBar() {
           >
             <ChevronLeftIcon />
           </button>
-        ) : (
+        ) : !externalFilePath ? (
           <IconButton label="Settings" onClick={() => setView("settings")}>
             <GearIcon />
           </IconButton>
-        )}
+        ) : null}
       </div>
     </header>
   );

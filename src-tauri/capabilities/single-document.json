@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "single-document",
+  "description": "Isolated Markdown windows can edit their file and close/minimize their own window, but do not receive Base preferences or updater/dialog permissions.",
+  "windows": ["external-*"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize"
+  ]
+}

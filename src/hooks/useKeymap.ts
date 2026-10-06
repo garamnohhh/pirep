@@ -30,6 +30,14 @@ export function useKeymap() {
       const s = useStore.getState();
       const sc = s.shortcuts;
 
+      if (s.externalFilePath) {
+        if (matchShortcut(e, sc.editMode)) {
+          e.preventDefault();
+          s.toggleFileEditMode();
+        }
+        return;
+      }
+
       if (matchShortcut(e, sc.sidebar)) {
         e.preventDefault();
         s.toggleSidebar();

@@ -1,4 +1,7 @@
 export type FileBaseMatch = { kind: "current" | "other"; base: string } | { kind: "outside" };
+export type FileOpenRoute =
+  | { kind: "base"; windowLabel: "main"; base: string; relativePath: string }
+  | { kind: "external"; path: string; windowLabel: string };
 
 function normalize(path: string): string {
   const parts: string[] = [];
@@ -21,4 +24,25 @@ export function classifyFileBase(path: string, current: string | null, bases: st
     kind: current && normalize(current) === containing.normalized ? "current" : "other",
     base: containing.base,
   };
+}
+
+function externalWindowLabel(path: string): string {
+  let hash = 0x811c9dc5;
+  let second = 0x9e3779b9;
+  for (let i = 0; i < path.length; i++) {
+    hash ^= path.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+    second ^= path.charCodeAt(i) + (second << 6) + (second >>> 2);
+  }
+  return `external-${(hash >>> 0).toString(16).padStart(8, "0")}${(second >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+export function routeFileOpen(path: string, current: string | null, bases: string[]): FileOpenRoute {
+  const normalizedPath = normalize(path);
+  const match = classifyFileBase(normalizedPath, current, bases);
+  if (match.kind !== "outside") {
+    const base = normalize(match.base).replace(/\/$/, "");
+    return { kind: "base", windowLabel: "main", base: match.base, relativePath: normalizedPath.slice(base.length + 1) };
+  }
+  return { kind: "external", path: normalizedPath, windowLabel: externalWindowLabel(normalizedPath) };
 }

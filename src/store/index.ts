@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import { api } from "../lib/invoke";
 import { slugify } from "../lib/markdown";
@@ -11,6 +11,14 @@ export type Theme = "light" | "dark";
 export type SidebarTab = "queue" | "files";
 export type View = "onboarding" | "inbox" | "reader" | "file-viewer" | "diff" | "settings" | "tag-results" | "rabbit-hole";
 export type Mode = "read" | "edit";
+
+export const initialExternalFilePath = new URLSearchParams(window.location.search).get("externalFile");
+export const isSingleDocumentWindow = initialExternalFilePath !== null;
+const isolatedWindowStorage = {
+  getItem: (name: string) => localStorage.getItem(name),
+  setItem: (_name: string, _value: string) => {},
+  removeItem: (_name: string) => {},
+};
 
 export interface ShortcutsMap {
   sidebar: string;
@@ -183,8 +191,6 @@ interface AppState {
   openDoc: (docId: string) => void;
   followWikiLink: (raw: string) => Promise<void>;
   openFile: (relPath: string) => void;
-  openExternalFile: (path: string) => void;
-  addExternalFolderAsBase: () => Promise<void>;
   toggleFileEditMode: () => void;
   loadNonMdFiles: () => Promise<void>;
   goInbox: () => void;
@@ -219,11 +225,11 @@ function _build() { return create<AppState>()(
       scanning: false,
       nonMdFiles: [],
       allDirs: [],
-      view: "onboarding",
+      view: initialExternalFilePath ? "file-viewer" : "onboarding",
       previousView: null,
       openDocId: null,
-      openFilePath: null,
-      externalFilePath: null,
+      openFilePath: initialExternalFilePath,
+      externalFilePath: initialExternalFilePath,
       fileEditMode: false,
       mode: "read",
       readLockVersion: null,
@@ -481,27 +487,6 @@ function _build() { return create<AppState>()(
         set({ openFilePath: relPath, externalFilePath: null, openDocId: null, view: "file-viewer", fileEditMode: false });
       },
 
-      openExternalFile: (path) => set({
-        openFilePath: path,
-        externalFilePath: path,
-        openDocId: null,
-        view: "file-viewer",
-        fileEditMode: false,
-        mode: "read",
-      }),
-
-      addExternalFolderAsBase: async () => {
-        const path = get().externalFilePath;
-        if (!path) return;
-        const folder = path.slice(0, path.lastIndexOf("/")) || "/";
-        await get().openVault(folder);
-        const relative = path.startsWith(`${folder}/`) ? path.slice(folder.length + 1) : path.slice(1);
-        const id = relative.toLowerCase();
-        if (get().db?.docs[id]) get().openDoc(id);
-        else get().openFile(relative);
-        get().revealInTree();
-      },
-
       toggleFileEditMode: () => set((s) => ({ fileEditMode: !s.fileEditMode })),
 
       goInbox: () => set({ view: "inbox", openDocId: null }),
@@ -561,6 +546,7 @@ function _build() { return create<AppState>()(
     }),
     {
       name: "pirep",
+      storage: createJSONStorage(() => isSingleDocumentWindow ? isolatedWindowStorage : localStorage),
       partialize: (s) => ({
         theme: s.theme,
         vaultRoot: s.vaultRoot,
@@ -581,6 +567,14 @@ function _build() { return create<AppState>()(
       // Merge persisted shortcuts with defaults so new keys are never undefined.
       merge: (persisted, current) => {
         const p = persisted as Partial<AppState>;
+        if (isSingleDocumentWindow) {
+          return {
+            ...current,
+            theme: p.theme ?? current.theme,
+            editorWidth: p.editorWidth ?? current.editorWidth,
+            shortcuts: { ...DEFAULT_SHORTCUTS, ...(p.shortcuts ?? {}) },
+          };
+        }
         const vaults = p.vaults ?? [];
         const root = p.vaultRoot ?? null;
         return {

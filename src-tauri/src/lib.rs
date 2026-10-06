@@ -126,7 +126,7 @@ pub fn run() {
                             false
                         }
                     };
-                    if ready { let _ = app.emit("open-file-request", path); }
+                    if ready { let _ = app.emit_to("main", "open-file-request", path); }
                 }
             }
         });
