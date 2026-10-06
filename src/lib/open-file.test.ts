@@ -1,4 +1,4 @@
-import { classifyFileBase, routeFileOpen } from "./open-file.ts";
+import { classifyFileBase, routeFileOpen, offsetWindowPosition } from "./open-file.ts";
 
 const bases = ["/Users/test/Base A", "/Users/test/Base B"];
 const cases = [
@@ -23,3 +23,16 @@ for (const [name, actual, expected] of routes) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`${name}: ${JSON.stringify(actual)} !== ${JSON.stringify(expected)}`);
 }
 console.log(`${routes.length} file-open routing tests passed`);
+
+const positionCases = [
+  ["offsets within monitor", { x: 100, y: 10 }, { x: 0, y: 0, width: 1440, height: 900 }, { width: 1120, height: 820 }, { x: 136, y: 46 }],
+  ["clamps at right and bottom edges", { x: 1300, y: 800 }, { x: 0, y: 0, width: 1440, height: 900 }, { width: 1120, height: 820 }, { x: 320, y: 80 }],
+  ["supports negative monitor origins", { x: -1000, y: -700 }, { x: -1280, y: -1000, width: 1280, height: 1000 }, { width: 1120, height: 820 }, { x: -1120, y: -820 }],
+] as const;
+for (const [name, origin, workArea, size, expected] of positionCases) {
+  const actual = offsetWindowPosition(origin, workArea, size);
+  if (actual.x !== expected.x || actual.y !== expected.y) {
+    throw new Error(`${name}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+  }
+}
+console.log(`${positionCases.length} window-position tests passed`);

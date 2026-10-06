@@ -57,16 +57,19 @@ export function MainApp() {
     return (
       <AppShell noSidebar={!!externalFilePath}>
         {externalFilePath && (
-          <button
-            type="button"
-            onClick={() => void emitTo("main", "add-external-file-as-base", {
-              path: externalFilePath,
-              sourceLabel: getCurrentWebviewWindow().label,
-            })}
-            className="shrink-0 border-b border-line bg-tertiary px-4 py-2 text-left text-[12px] text-slate hover:text-ink"
-          >
-            Add this folder as a Base
-          </button>
+          <div className="flex shrink-0 items-center gap-1 border-b border-line bg-tertiary px-4 py-2 text-[12px] text-slate">
+            <span>Outside your Base ·</span>
+            <button
+              type="button"
+              onClick={() => void emitTo("main", "add-external-file-as-base", {
+                path: externalFilePath,
+                sourceLabel: getCurrentWebviewWindow().label,
+              })}
+              className="text-left hover:text-ink"
+            >
+              Add this folder as a Base
+            </button>
+          </div>
         )}
         <ContentBoundary resetKey={openFilePath}>
           <div className="flex h-full flex-col min-h-0"><FileViewer /></div>

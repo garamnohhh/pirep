@@ -3,6 +3,18 @@ export type FileOpenRoute =
   | { kind: "base"; windowLabel: "main"; base: string; relativePath: string }
   | { kind: "external"; path: string; windowLabel: string };
 
+export function offsetWindowPosition(
+  origin: { x: number; y: number },
+  workArea: { x: number; y: number; width: number; height: number },
+  windowSize: { width: number; height: number },
+  offset = 36,
+) {
+  return {
+    x: Math.max(workArea.x, Math.min(origin.x + offset, workArea.x + Math.max(0, workArea.width - windowSize.width))),
+    y: Math.max(workArea.y, Math.min(origin.y + offset, workArea.y + Math.max(0, workArea.height - windowSize.height))),
+  };
+}
+
 function normalize(path: string): string {
   const parts: string[] = [];
   for (const part of path.replace(/\\/g, "/").split("/")) {

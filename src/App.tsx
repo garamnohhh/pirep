@@ -2,6 +2,7 @@ import { Component, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { WebviewWindow, getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { currentMonitor } from "@tauri-apps/api/window";
 import { isSingleDocumentWindow, useStore } from "./store";
 import { useKeymap } from "./hooks/useKeymap";
 import { useDarkMode } from "./hooks/useDarkMode";
@@ -9,7 +10,7 @@ import { Onboarding } from "./screens/Onboarding";
 import { MainApp } from "./screens/MainApp";
 import { CommandPalette } from "./components/ui/CommandPalette";
 import { FindBar } from "./components/ui/FindBar";
-import { routeFileOpen } from "./lib/open-file";
+import { offsetWindowPosition, routeFileOpen } from "./lib/open-file";
 import { api } from "./lib/invoke";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { caught: boolean }> {
@@ -86,14 +87,34 @@ function App() {
       url.search = "";
       url.hash = "";
       url.searchParams.set("externalFile", path);
+      const width = 1120;
+      const height = 820;
+      let position: { x: number; y: number } | undefined;
+      try {
+        const monitor = await currentMonitor();
+        if (monitor) {
+          const scale = monitor.scaleFactor;
+          const origin = (await currentWindow.outerPosition()).toLogical(scale);
+          const areaPosition = monitor.workArea.position.toLogical(scale);
+          const areaSize = monitor.workArea.size.toLogical(scale);
+          position = offsetWindowPosition(origin, {
+            x: areaPosition.x,
+            y: areaPosition.y,
+            width: areaSize.width,
+            height: areaSize.height,
+          }, { width, height });
+        }
+      } catch (error) {
+        console.warn("Could not position document window beside Base window:", error);
+      }
       const child = new WebviewWindow(label, {
         url: url.toString(),
         title: path.split("/").pop() ?? path,
-        width: 1120,
-        height: 820,
+        width,
+        height,
         minWidth: 960,
         minHeight: 600,
-        center: true,
+        ...(position ?? { center: true }),
         resizable: true,
         decorations: false,
         transparent: true,
