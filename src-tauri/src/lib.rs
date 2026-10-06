@@ -1,5 +1,6 @@
 mod assets;
 mod commands;
+mod default_app;
 mod vault;
 
 use commands::VaultState;
@@ -117,6 +118,8 @@ pub fn run() {
             commands::delete_raw_file,
             commands::read_external_markdown,
             commands::write_external_markdown,
+            default_app::get_markdown_default_app,
+            default_app::set_markdown_default_app,
             take_pending_open_files,
         ])
         .build(tauri::generate_context!())
