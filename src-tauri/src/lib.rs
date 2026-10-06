@@ -15,6 +15,11 @@ struct PendingOpenFilesState {
     frontend_ready: bool,
 }
 
+#[cfg(target_os = "macos")]
+fn should_hide_on_close(window_label: &str) -> bool {
+    window_label == "main"
+}
+
 #[tauri::command]
 fn take_pending_open_files(state: tauri::State<'_, PendingOpenFiles>) -> Vec<String> {
     let mut pending = state.0.lock().expect("pending open files lock poisoned");
@@ -33,6 +38,15 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(VaultState::default())
         .manage(PendingOpenFiles::default())
+        .on_window_event(|window, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if should_hide_on_close(window.label()) {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .setup(|app| {
             #[cfg(target_os = "macos")]
             {
@@ -137,4 +151,19 @@ pub fn run() {
                 }
             }
         });
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod close_policy_tests {
+    use super::should_hide_on_close;
+
+    #[test]
+    fn main_window_is_hidden_on_close_request() {
+        assert!(should_hide_on_close("main"));
+    }
+
+    #[test]
+    fn external_windows_are_allowed_to_close() {
+        assert!(!should_hide_on_close("external-123"));
+    }
 }
