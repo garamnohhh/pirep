@@ -10,6 +10,7 @@ import { ShikiCodeBlock } from "./ShikiCodeBlock";
 import { useStore } from "../../store";
 import { resolveWiki } from "../../lib/wiki";
 import { resolveAbsoluteFileLink, resolveDocRelative } from "../../lib/path";
+import { externalWebLink } from "../../lib/external-link";
 import type { Db } from "../../lib/types";
 
 const WIKI_PREFIX = "pirep-wiki://";
@@ -178,7 +179,12 @@ export function MarkdownRenderer({ source, docPath, onHeadings, onSourceChange }
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     const target = e.target as HTMLElement;
     if (useStore.getState().externalFilePath) {
-      if (target.closest("a")) e.preventDefault();
+      const anchor = target.closest("a");
+      if (anchor) {
+        e.preventDefault();
+        const url = externalWebLink(anchor.getAttribute("href") ?? "");
+        if (url) void openUrl(url).catch((reason) => console.error("Could not open external link:", reason));
+      }
       return;
     }
 

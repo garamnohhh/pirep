@@ -2,11 +2,19 @@ import { useEffect } from "react";
 import { useStore, matchShortcut } from "../store";
 import { captureMode } from "../lib/captureMode";
 import { modalStack } from "../lib/modalStack";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { isCloseWindowShortcut } from "../lib/window-shortcuts";
 
 export function useKeymap() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (captureMode.active) return;
+
+      if (isCloseWindowShortcut(e)) {
+        e.preventDefault();
+        void getCurrentWebviewWindow().close().catch((error) => console.error("Could not close window:", error));
+        return;
+      }
 
       if (e.key === "Escape") {
         if (modalStack.depth > 0) return;

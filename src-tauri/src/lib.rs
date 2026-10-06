@@ -109,8 +109,8 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|app, event| {
             #[cfg(target_os = "macos")]
-            if let tauri::RunEvent::Opened { urls } = event {
-                let paths = urls.into_iter().filter_map(|url| url.to_file_path().ok())
+            if let tauri::RunEvent::Opened { urls } = &event {
+                let paths = urls.iter().filter_map(|url| url.to_file_path().ok())
                     .map(|path| path.to_string_lossy().into_owned())
                     .filter(|path| {
                         path.rsplit_once('.').is_some_and(|(_, ext)| {
@@ -127,6 +127,13 @@ pub fn run() {
                         }
                     };
                     if ready { let _ = app.emit_to("main", "open-file-request", path); }
+                }
+            }
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { has_visible_windows: false, .. } = &event {
+                if let Some(main) = app.get_webview_window("main") {
+                    let _ = main.show();
+                    let _ = main.set_focus();
                 }
             }
         });

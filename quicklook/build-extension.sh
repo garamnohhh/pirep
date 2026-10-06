@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET="$ROOT/src-tauri/target"
 EXT="$TARGET/quicklook-extension/PirepPreview.appex"
 MODULE_CACHE="$TARGET/quicklook-swift-module-cache"
+EXT_ID="${QL_EXTENSION_ID:-com.garamnoh.pirep.preview}"
 
 pnpm exec vite build --config "$ROOT/quicklook/renderer/vite.config.ts"
 QL_RENDERER_BUNDLE=math pnpm exec vite build --config "$ROOT/quicklook/renderer/vite.config.ts"
@@ -14,6 +15,7 @@ QL_RENDERER_BUNDLE=mermaid pnpm exec vite build --config "$ROOT/quicklook/render
 mkdir -p "$EXT/Contents/MacOS" "$EXT/Contents/Resources" "$MODULE_CACHE"
 ditto "$TARGET/quicklook-renderer" "$EXT/Contents/Resources/Renderer"
 cp "$ROOT/quicklook/PirepPreview-Info.plist" "$EXT/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $EXT_ID" "$EXT/Contents/Info.plist"
 
 DEVELOPER_DIR=/Library/Developer/CommandLineTools \
   /usr/bin/swiftc \
@@ -30,7 +32,7 @@ DEVELOPER_DIR=/Library/Developer/CommandLineTools \
   -o "$EXT/Contents/MacOS/PirepPreview"
 
 plutil -lint "$EXT/Contents/Info.plist" "$ROOT/quicklook/PirepPreview.entitlements"
-codesign --force --sign - --identifier "com.garamnoh.pirep.preview" \
+codesign --force --sign - --identifier "$EXT_ID" \
   --entitlements "$ROOT/quicklook/PirepPreview.entitlements" "$EXT"
 codesign --verify --strict --verbose=2 "$EXT"
 echo "Quick Look extension built and signed: $EXT"
