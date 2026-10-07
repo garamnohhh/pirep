@@ -4,6 +4,7 @@
 //! naturally and preview-only CSP can be set on the document response.
 
 use crate::commands::VaultState;
+use crate::external_files::{resolve_external_asset, ExternalFileRoots};
 use std::path::{Component, Path, PathBuf};
 use tauri::http::{Request, Response};
 use tauri::{Manager, Runtime, UriSchemeContext};
@@ -133,15 +134,49 @@ pub fn handler<R: Runtime>(
     ctx: UriSchemeContext<'_, R>,
     request: Request<Vec<u8>>,
 ) -> Response<Vec<u8>> {
-    let root = ctx
-        .app_handle()
-        .state::<VaultState>()
-        .root
-        .lock()
-        .unwrap()
-        .clone();
+    if ctx.webview_label() == "main" {
+        let root = ctx.app_handle().state::<VaultState>().root.lock().unwrap().clone();
+        return serve(root, request.uri().path());
+    }
 
-    serve(root, request.uri().path())
+    let roots = ctx.app_handle().state::<ExternalFileRoots>();
+    serve_external(roots.get(ctx.webview_label()), request.uri().path(), &home_directory())
+}
+
+fn serve_external(root: Option<PathBuf>, url_path: &str, home: &Path) -> Response<Vec<u8>> {
+    let Some(root) = root else {
+        return Response::builder().status(403).body(Vec::new()).unwrap();
+    };
+    match resolve_external_asset(&root, &decode_path(url_path), home) {
+        Ok(path) => match std::fs::read(&path) {
+            Ok(bytes) => {
+                let content_type = if is_markdown(&path) {
+                    "text/markdown; charset=utf-8"
+                } else {
+                    mime_for(&path)
+                };
+                Response::builder()
+                    .status(200)
+                    .header("Content-Type", content_type)
+                    .header("Access-Control-Allow-Origin", "*")
+                    .header("Cache-Control", "no-store")
+                    .body(bytes)
+                    .unwrap()
+            }
+            Err(_) => Response::builder().status(404).body(Vec::new()).unwrap(),
+        },
+        Err(code) => Response::builder().status(code).body(Vec::new()).unwrap(),
+    }
+}
+
+fn is_markdown(path: &Path) -> bool {
+    path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| {
+        ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown")
+    })
+}
+
+fn home_directory() -> PathBuf {
+    std::env::var_os("HOME").map(PathBuf::from).unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -217,6 +252,27 @@ mod tests {
         }
 
         std::fs::remove_dir_all(&vault).ok();
+    }
+
+    #[test]
+    fn external_requests_serve_only_markdown_and_image_assets() {
+        let dir = std::env::temp_dir().join(format!("pirep-external-assets-{}", std::process::id()));
+        let root = dir.join("Outside");
+        std::fs::create_dir_all(root.join("img")).unwrap();
+        std::fs::write(root.join("doc.md"), "hello").unwrap();
+        std::fs::write(root.join("img/pic.png"), b"png").unwrap();
+        std::fs::write(root.join("run.js"), "no").unwrap();
+
+        let image = serve_external(Some(root.clone()), root.join("img/pic.png").to_str().unwrap(), &dir);
+        assert_eq!(image.status(), 200);
+        assert_eq!(image.headers()["Content-Type"], "image/png");
+        let markdown = serve_external(Some(root.clone()), root.join("doc.md").to_str().unwrap(), &dir);
+        assert_eq!(markdown.status(), 200);
+        assert_eq!(markdown.headers()["Content-Type"], "text/markdown; charset=utf-8");
+        let script = serve_external(Some(root.clone()), root.join("run.js").to_str().unwrap(), &dir);
+        assert_eq!(script.status(), 403);
+        assert_eq!(serve_external(None, "/tmp/file.png", &dir).status(), 403);
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

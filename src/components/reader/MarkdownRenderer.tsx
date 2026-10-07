@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
+import { emitTo } from "@tauri-apps/api/event";
 import { writeImage } from "@tauri-apps/plugin-clipboard-manager";
 import { toBlob } from "html-to-image";
 import { parseDoc } from "../../lib/markdown";
-import { localImageUrl } from "../../lib/slides";
+import { externalImageUrl, localImageUrl } from "../../lib/slides";
 import type { Heading } from "../../lib/markdown";
 import { MermaidDiagram } from "./MermaidDiagram";
 import { ShikiCodeBlock } from "./ShikiCodeBlock";
@@ -11,6 +12,7 @@ import { useStore } from "../../store";
 import { resolveWiki } from "../../lib/wiki";
 import { resolveAbsoluteFileLink, resolveDocRelative } from "../../lib/path";
 import { externalWebLink } from "../../lib/external-link";
+import { api } from "../../lib/invoke";
 import type { Db } from "../../lib/types";
 
 const WIKI_PREFIX = "pirep-wiki://";
@@ -139,20 +141,24 @@ export function MarkdownRenderer({ source, docPath, onHeadings, onSourceChange }
   const vaultRoot = useStore((s) => externalFilePath ? null : s.vaultRoot);
   const { segments, headings } = useMemo(() => {
     const parsed = parseDoc(source);
-    if (vaultRoot && docPath) {
+    if (externalFilePath || (vaultRoot && docPath)) {
       for (const segment of parsed.segments) {
         if (!("html" in segment)) continue;
         const template = document.createElement("template");
         template.innerHTML = segment.html;
         template.content.querySelectorAll<HTMLImageElement>("img[src]").forEach((img) => {
-          const resolved = localImageUrl(img.getAttribute("src") ?? "", vaultRoot, docPath);
+          const src = img.getAttribute("src") ?? "";
+          const resolved = externalFilePath
+            ? externalImageUrl(src, externalFilePath)
+            : vaultRoot && docPath ? localImageUrl(src, vaultRoot, docPath) : null;
           if (resolved) img.setAttribute("src", resolved);
+          else if (externalFilePath && !/^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(src)) img.removeAttribute("src");
         });
         segment.html = template.innerHTML;
       }
     }
     return parsed;
-  }, [source, vaultRoot, docPath]);
+  }, [source, vaultRoot, docPath, externalFilePath]);
   const db = useStore((s) => externalFilePath ? null : s.db);
   const openDocId = useStore((s) => externalFilePath ? null : s.openDocId);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -180,11 +186,35 @@ export function MarkdownRenderer({ source, docPath, onHeadings, onSourceChange }
     const target = e.target as HTMLElement;
     if (useStore.getState().externalFilePath) {
       const anchor = target.closest("a");
-      if (anchor) {
-        e.preventDefault();
-        const url = externalWebLink(anchor.getAttribute("href") ?? "");
-        if (url) void openUrl(url).catch((reason) => console.error("Could not open external link:", reason));
+      if (!anchor) return;
+      e.preventDefault();
+      setLinkError(null);
+      const href = anchor.getAttribute("href") ?? "";
+      const url = externalWebLink(href);
+      if (url) {
+        void openUrl(url).catch((reason) => {
+          setLinkError(`Could not open link: ${reason instanceof Error ? reason.message : String(reason)}`);
+        });
+        return;
       }
+      if (href.startsWith("#")) {
+        const id = decodeURIComponent(href.slice(1));
+        if (!id) bodyRef.current?.scrollIntoView();
+        else document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      const wiki = href.startsWith(WIKI_PREFIX);
+      let linkTarget: string;
+      try { linkTarget = decodeURIComponent(wiki ? href.slice(WIKI_PREFIX.length) : href); }
+      catch { setLinkError("Not found next to this file"); return; }
+      const currentPath = useStore.getState().externalFilePath;
+      if (!currentPath) return;
+      void api.resolveExternalMarkdownLink(currentPath, linkTarget, wiki).then((resolved) => {
+        if (!resolved) { setLinkError("Not found next to this file"); return; }
+        return emitTo("main", "open-file-request", resolved);
+      }).catch((reason) => {
+        setLinkError(`Could not open link: ${reason instanceof Error ? reason.message : String(reason)}`);
+      });
       return;
     }
 

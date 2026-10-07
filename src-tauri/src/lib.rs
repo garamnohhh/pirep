@@ -1,6 +1,7 @@
 mod assets;
 mod commands;
 mod default_app;
+mod external_files;
 mod vault;
 
 use commands::VaultState;
@@ -38,8 +39,12 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(VaultState::default())
+        .manage(external_files::ExternalFileRoots::default())
         .manage(PendingOpenFiles::default())
         .on_window_event(|window, event| {
+            if matches!(event, tauri::WindowEvent::Destroyed) {
+                window.app_handle().state::<external_files::ExternalFileRoots>().remove(window.label());
+            }
             #[cfg(target_os = "macos")]
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if should_hide_on_close(window.label()) {
@@ -121,6 +126,8 @@ pub fn run() {
             commands::delete_raw_file,
             commands::read_external_markdown,
             commands::write_external_markdown,
+            external_files::register_external_file_root,
+            external_files::resolve_external_markdown_link,
             default_app::get_markdown_default_app,
             default_app::set_markdown_default_app,
             take_pending_open_files,

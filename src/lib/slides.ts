@@ -29,6 +29,22 @@ export function localImageUrl(src: string, vaultRoot: string, docPath: string): 
   return new URL(src, assetBaseHref(`${vaultRoot.replace(/\/+$/, "")}/${dir}`)).href;
 }
 
+const EXTERNAL_IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "gif", "webp"]);
+
+export function externalImageUrl(src: string, sourcePath: string): string | null {
+  if (!src || /^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(src) || src.includes("\\")) return null;
+  const pathname = src.split(/[?#]/, 1)[0];
+  let decoded: string;
+  try { decoded = pathname.split("/").map((part) => decodeURIComponent(part)).join("/"); }
+  catch { return null; }
+  const parts = decoded.split("/");
+  if (parts.some((part) => !part || part.startsWith("."))) return null;
+  const ext = parts[parts.length - 1]?.split(".").pop()?.toLowerCase() ?? "";
+  if (!EXTERNAL_IMAGE_EXTS.has(ext)) return null;
+  const folder = sourcePath.slice(0, sourcePath.lastIndexOf("/")) || "/";
+  return new URL(src, assetBaseHref(folder)).href;
+}
+
 // Insert <base> as the first thing in <head> so it applies to every later
 // reference. Documents without a <head> get one. An existing <base> wins — the
 // author asked for it explicitly.

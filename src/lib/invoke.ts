@@ -43,6 +43,9 @@ export const api = {
   writeRawFile: (relPath: string, content: string) =>
     invoke<void>("write_raw_file", { relPath, content }),
   readExternalMarkdown: (path: string) => invoke<string>("read_external_markdown", { path }),
+  registerExternalFileRoot: (path: string) => invoke<void>("register_external_file_root", { path }),
+  resolveExternalMarkdownLink: (sourcePath: string, target: string, wiki: boolean) =>
+    invoke<string | null>("resolve_external_markdown_link", { sourcePath, target, wiki }),
   writeExternalMarkdown: (path: string, content: string) =>
     invoke<void>("write_external_markdown", { path, content }),
   takePendingOpenFiles: () => invoke<string[]>("take_pending_open_files"),

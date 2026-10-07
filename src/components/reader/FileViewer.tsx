@@ -556,7 +556,7 @@ function ExternalMarkdownFile({ path, fileEditMode }: { path: string; fileEditMo
 
   useEffect(() => {
     let cancelled = false;
-    api.readExternalMarkdown(path).then((text) => {
+    api.registerExternalFileRoot(path).then(() => api.readExternalMarkdown(path)).then((text) => {
       if (cancelled) return;
       draft.current = text;
       setSource(text);
