@@ -859,7 +859,7 @@ function AboutTab() {
   const [updateStatus, setUpdateStatus] = useState("");
   const [checking, setChecking] = useState(false);
   const [installing, setInstalling] = useState(false);
-  const releaseUrl = "https://github.com/garamnohhh/pirep/releases/latest";
+  const releaseUrl = "https://pirep.garamnoh.workers.dev/en/changelog";
   const repoFileUrl = (name: string) =>
     `https://github.com/garamnohhh/pirep/blob/main/${name}`;
 
