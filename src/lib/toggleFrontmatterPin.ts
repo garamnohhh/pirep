@@ -8,3 +8,12 @@ export function toggleFrontmatterPin(content: string, pinned: boolean): string {
   else lines[index] = lines[index].replace(/^(\s*pinned\s*:\s*).*/i, `$1${pinned}`);
   return `${start}${lines.join("\n")}${end}${content.slice(match[0].length)}`;
 }
+
+export function isFrontmatterPinned(content: string): boolean {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  return !!match?.[1].split(/\r?\n/).some((line) => /^\s*pinned\s*:\s*(?:true|yes)\s*$/i.test(line));
+}
+
+export function togglePinnedFrontmatter(content: string): string {
+  return toggleFrontmatterPin(content, !isFrontmatterPinned(content));
+}

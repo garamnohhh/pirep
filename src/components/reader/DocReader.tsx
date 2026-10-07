@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useViewport } from "../../hooks/useViewport";
 import { useStore } from "../../store";
 import { api } from "../../lib/invoke";
-import { toggleFrontmatterPin } from "../../lib/toggleFrontmatterPin";
+import { togglePinnedFrontmatter } from "../../lib/toggleFrontmatterPin";
 import { extractHeadings, splitFrontmatter } from "../../lib/markdown";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { SourceEditor } from "./SourceEditor";
@@ -111,12 +111,21 @@ export function DocReader() {
 
   useEffect(() => {
     const toggle = () => {
-      const currentlyPinned = /^---\r?\n[\s\S]*?^\s*pinned\s*:\s*(?:true|yes)\s*$/im.test(draft.current);
-      onInlineEdit(toggleFrontmatterPin(draft.current, !currentlyPinned));
+      if (mode !== "read" || !contentReady) return;
+      const text = togglePinnedFrontmatter(draft.current);
+      if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+      draft.current = text;
+      setSource(text);
+      void api.writeDoc(docId, text).then((db) => {
+        lastSaved.current = text;
+        applyDb(db);
+        const savedDoc = db.docs[docId];
+        if (savedDoc) useStore.setState({ readLockVersion: savedDoc.currentVersion });
+      }).catch((error) => console.error("Could not toggle Markdown pin:", error));
     };
     window.addEventListener("pirep-toggle-pin", toggle);
     return () => window.removeEventListener("pirep-toggle-pin", toggle);
-  }, [onInlineEdit]);
+  }, [mode, contentReady, docId, applyDb]);
 
   const flushSave = useCallback(async () => {
     if (saveTimer.current) {

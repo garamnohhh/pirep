@@ -5,6 +5,7 @@ import { slugify } from "../../lib/markdown";
 import { registerFindTarget } from "../../lib/find";
 import { formatTables } from "../../lib/table";
 import { buildLinkCompletionCandidates } from "../../lib/link-completion";
+import { togglePinnedFrontmatter } from "../../lib/toggleFrontmatterPin";
 import { useDocs, useNonMdFiles } from "../../store";
 
 // Edit-mode surface: whole doc as raw markdown, mono with a left ink rule
@@ -56,6 +57,18 @@ export function SourceEditor({
         return [];
       },
     });
+    const togglePin = () => {
+      const current = view.state.doc.toString();
+      const next = togglePinnedFrontmatter(current);
+      if (next === current) return;
+      let from = 0;
+      while (from < current.length && current[from] === next[from]) from++;
+      let oldEnd = current.length;
+      let newEnd = next.length;
+      while (oldEnd > from && newEnd > from && current[oldEnd - 1] === next[newEnd - 1]) { oldEnd--; newEnd--; }
+      view.dispatch({ changes: { from, to: oldEnd, insert: next.slice(from, newEnd) } });
+    };
+    window.addEventListener("pirep-toggle-pin", togglePin);
 
     // land at the heading we were reading, show 3 lines of context above
     if (scrollToSlug) {
@@ -79,7 +92,7 @@ export function SourceEditor({
       }
     }
     view.focus();
-    return () => { unregisterFind(); view.destroy(); };
+    return () => { window.removeEventListener("pirep-toggle-pin", togglePin); unregisterFind(); view.destroy(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
