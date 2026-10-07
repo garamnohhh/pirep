@@ -6,6 +6,8 @@ export interface FrontmatterKeyCount { key: string; count: number }
 export const api = {
   scanVault: (path: string) => invoke<Db>("scan_vault", { path }),
   listFrontmatterKeys: () => invoke<FrontmatterKeyCount[]>("list_frontmatter_keys"),
+  listPinnedFiles: () => invoke<string[]>("list_pinned_files"),
+  togglePinnedFile: (relPath: string) => invoke<string[]>("toggle_pinned_file", { relPath }),
   readDoc: (docId: string) => invoke<DocContent>("read_doc", { docId }),
   writeDoc: (docId: string, content: string) =>
     invoke<Db>("write_doc", { docId, content }),

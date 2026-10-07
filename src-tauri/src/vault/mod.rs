@@ -4,6 +4,7 @@ pub mod diff;
 pub mod hash;
 pub mod snapshot;
 pub mod frontmatter_keys;
+pub mod pins;
 
 use change::ChangeRecord;
 use db::{Db, DocEntry};
@@ -79,6 +80,8 @@ fn rel_doc_id(root: &Path, p: &Path) -> Result<(String, String), String> {
 
 // Walk the vault, detect new/changed/deleted .md files, snapshot + record changes.
 pub fn scan(root: &Path) -> Result<Db, String> {
+    let existing_pins = pins::read(root)?;
+    pins::write(root, &existing_pins)?;
     let mut db = db::load(root);
 
     // Migration: entries that predate last_decided_version (serde default = 0).

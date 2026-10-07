@@ -598,6 +598,7 @@ function ShortcutsTab() {
   const ROWS: { key: keyof ShortcutsMap; label: string }[] = [
     { key: "palette", label: "Command palette" },
     { key: "editMode", label: "Toggle edit mode" },
+    { key: "pin", label: "Toggle pin" },
     { key: "sidebar", label: "Toggle sidebar" },
     { key: "outline", label: "Outline" },
     { key: "focus", label: "Focus mode" },

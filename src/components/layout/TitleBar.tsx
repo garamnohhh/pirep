@@ -55,6 +55,8 @@ export function TitleBar() {
   const externalFilePath = useStore((s) => s.externalFilePath);
   const fileEditMode = useStore((s) => s.fileEditMode);
   const toggleFileEditMode = useStore((s) => s.toggleFileEditMode);
+  const pinnedFiles = useStore((s) => s.pinnedFiles);
+  const togglePin = useStore((s) => s.togglePin);
   const activeTag = useStore((s) => s.activeTag);
   const rabbitTrail = useStore((s) => s.rabbitTrail);
   const doc = useStore((s) => (openDocId && s.db ? s.db.docs[openDocId] : undefined));
@@ -67,6 +69,8 @@ export function TitleBar() {
     view === "settings" || view === "diff" || view === "tag-results" || view === "rabbit-hole";
 
   const fileName = openFilePath?.split("/").pop() ?? "";
+  const canPin = (inReader || inFileViewer) && !externalFilePath;
+  const isPinned = inReader ? !!doc?.pinned : !!openFilePath && pinnedFiles.includes(openFilePath);
 
   return (
     <header
@@ -160,6 +164,11 @@ export function TitleBar() {
 
       {/* Right group — also unchanged apart from the spacing. */}
       <div className="flex items-center gap-1 justify-self-end">
+        {canPin && (
+          <IconButton label={isPinned ? "Unpin (⌘D)" : "Pin (⌘D)"} onClick={() => void togglePin().catch((error) => console.error("Could not toggle pin:", error))}>
+            <PinButtonIcon on={isPinned} />
+          </IconButton>
+        )}
         {inReader && (
           <button
             onClick={toggleMode}
@@ -210,6 +219,10 @@ export function TitleBar() {
       </div>
     </header>
   );
+}
+
+function PinButtonIcon({ on }: { on: boolean }) {
+  return <svg width="15" height="15" viewBox="0 0 16 16" fill={on ? "var(--color-gold)" : "none"} stroke={on ? "var(--color-gold)" : "currentColor"} strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 2.5h6l-.8 3.2 1.6 2.1v1H8.5v4.7L7.5 15V8.8H4.2v-1l1.6-2.1L5 2.5Z" /></svg>;
 }
 
 function Sep() {

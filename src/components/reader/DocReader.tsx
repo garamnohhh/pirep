@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useViewport } from "../../hooks/useViewport";
 import { useStore } from "../../store";
 import { api } from "../../lib/invoke";
+import { toggleFrontmatterPin } from "../../lib/toggleFrontmatterPin";
 import { extractHeadings, splitFrontmatter } from "../../lib/markdown";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { SourceEditor } from "./SourceEditor";
@@ -107,6 +108,15 @@ export function DocReader() {
     const newSource = source.replace(/^---\n[\s\S]*?\n---\n?/, `---\n${newFm}\n---\n`);
     onInlineEdit(newSource);
   }, [source, onInlineEdit]);
+
+  useEffect(() => {
+    const toggle = () => {
+      const currentlyPinned = /^---\r?\n[\s\S]*?^\s*pinned\s*:\s*(?:true|yes)\s*$/im.test(draft.current);
+      onInlineEdit(toggleFrontmatterPin(draft.current, !currentlyPinned));
+    };
+    window.addEventListener("pirep-toggle-pin", toggle);
+    return () => window.removeEventListener("pirep-toggle-pin", toggle);
+  }, [onInlineEdit]);
 
   const flushSave = useCallback(async () => {
     if (saveTimer.current) {

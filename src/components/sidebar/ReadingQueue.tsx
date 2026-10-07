@@ -4,6 +4,7 @@ import { unreadCount, docName } from "../../lib/types";
 import { DocContextMenu } from "../ui/DocContextMenu";
 import type { CtxMenu } from "../ui/DocContextMenu";
 import type { DocEntry } from "../../lib/types";
+import { ExtChip } from "../ui/ExtChip";
 
 // SideNav, straight off .gn-sidenav-item: 8px/16px padding, a 3px transparent
 // left border that turns accent on the current row, --surface behind it, and a
@@ -113,6 +114,8 @@ export function ReadingQueue() {
   const view = useStore((s) => s.view);
   const openId = useStore((s) => s.openDocId);
   const showEmpty = useStore((s) => s.showEmptySections);
+  const pinnedFiles = useStore((s) => s.pinnedFiles);
+  const openFile = useStore((s) => s.openFile);
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null);
 
   const changes = docs.filter((d) => d.currentVersion > d.lastDecidedVersion);
@@ -197,10 +200,11 @@ export function ReadingQueue() {
         </Group>
       )}
 
-      {(pinned.length > 0 || showEmpty) && (
+      {(pinned.length > 0 || pinnedFiles.length > 0 || showEmpty) && (
         <Group label="Pinned">
-          {pinned.length > 0
-            ? pinned.map((d) => (
+          {pinned.length + pinnedFiles.length > 0
+            ? <>
+              {pinned.map((d) => (
                 <Item
                   key={d.docId}
                   label={docName(d)}
@@ -210,7 +214,9 @@ export function ReadingQueue() {
                   onClick={() => openDoc(d.docId)}
                   onCtx={ctx(d)}
                 />
-              ))
+              ))}
+              {pinnedFiles.map((path) => <button key={path} type="button" onClick={() => openFile(path)} className="flex w-full items-center gap-2 text-left text-[13px] text-muted transition-colors hover:text-ink" style={{ padding: "8px 16px", borderLeft: "3px solid transparent" }}><span className="min-w-0 flex-1 truncate">{path.split("/").pop()}</span><ExtChip name={path.split("/").pop() ?? path} /></button>)}
+              </>
             : <Hint text="No pinned notes" />}
         </Group>
       )}

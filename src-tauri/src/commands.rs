@@ -164,7 +164,8 @@ fn rename_raw_file_at(root: &Path, rel_path: &str, new_name: &str) -> Result<(),
     let parent = Path::new(rel_path).parent().unwrap_or_else(|| Path::new(""));
     let new_rel = parent.join(new_name);
     let new = new_vault_file(root, new_rel.to_str().ok_or("invalid path")?)?;
-    std::fs::rename(old, new).map_err(|e| e.to_string())
+    std::fs::rename(old, new).map_err(|e| e.to_string())?;
+    crate::vault::pins::rename(root, rel_path, new_rel.to_str().ok_or("invalid path")?)
 }
 
 fn delete_raw_file_at(root: &Path, rel_path: &str) -> Result<(), String> {
@@ -264,6 +265,18 @@ pub fn scan_vault(
 #[tauri::command]
 pub fn list_frontmatter_keys(state: State<VaultState>) -> Result<Vec<vault::frontmatter_keys::FrontmatterKeyCount>, String> {
     vault::frontmatter_keys::collect(&get_root(&state)?)
+}
+
+#[tauri::command]
+pub fn list_pinned_files(state: State<VaultState>) -> Result<Vec<String>, String> {
+    vault::pins::read(&get_root(&state)?)
+}
+
+#[tauri::command]
+pub fn toggle_pinned_file(rel_path: String, state: State<VaultState>) -> Result<Vec<String>, String> {
+    let root = get_root(&state)?;
+    vault_file(&root, &rel_path)?;
+    vault::pins::toggle(&root, &rel_path)
 }
 
 #[tauri::command]

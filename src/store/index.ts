@@ -32,6 +32,7 @@ export interface ShortcutsMap {
   goChanges: string;
   newNote: string;
   openRelated: string;
+  pin: string;
 }
 
 export const DEFAULT_SHORTCUTS: ShortcutsMap = {
@@ -45,6 +46,7 @@ export const DEFAULT_SHORTCUTS: ShortcutsMap = {
   goChanges: "Meta+u",
   newNote: "Meta+n",
   openRelated: "Meta+o",
+  pin: "Meta+d",
 };
 
 export function matchShortcut(e: KeyboardEvent, combo: string | undefined): boolean {
@@ -121,6 +123,7 @@ interface AppState {
   scanning: boolean;
   nonMdFiles: string[];
   frontmatterKeys: FrontmatterKeyCount[];
+  pinnedFiles: string[];
   allDirs: string[];
   // navigation / reader
   view: View;
@@ -194,6 +197,7 @@ interface AppState {
   followWikiLink: (raw: string) => Promise<void>;
   openFile: (relPath: string) => void;
   toggleFileEditMode: () => void;
+  togglePin: () => Promise<void>;
   loadNonMdFiles: () => Promise<void>;
   goInbox: () => void;
   openDiff: (docId: string, from: number, to: number) => void;
@@ -227,6 +231,7 @@ function _build() { return create<AppState>()(
       scanning: false,
       nonMdFiles: [],
       frontmatterKeys: [],
+      pinnedFiles: [],
       allDirs: [],
       view: initialExternalFilePath ? "file-viewer" : "onboarding",
       previousView: null,
@@ -393,8 +398,8 @@ function _build() { return create<AppState>()(
 
       loadNonMdFiles: async () => {
         try {
-          const [files, dirs, frontmatterKeys] = await Promise.all([api.listFiles(), api.listDirs(), api.listFrontmatterKeys()]);
-          set({ nonMdFiles: files, allDirs: dirs, frontmatterKeys });
+          const [files, dirs, frontmatterKeys, pinnedFiles] = await Promise.all([api.listFiles(), api.listDirs(), api.listFrontmatterKeys(), api.listPinnedFiles()]);
+          set({ nonMdFiles: files, allDirs: dirs, frontmatterKeys, pinnedFiles });
         } catch { /* silent */ }
       },
 
@@ -491,6 +496,18 @@ function _build() { return create<AppState>()(
       },
 
       toggleFileEditMode: () => set((s) => ({ fileEditMode: !s.fileEditMode })),
+
+      togglePin: async () => {
+        const s = get();
+        if (s.externalFilePath) return;
+        if (s.view === "reader" && s.openDocId && s.db) {
+          window.dispatchEvent(new Event("pirep-toggle-pin"));
+          return;
+        }
+        if (s.view === "file-viewer" && s.openFilePath) {
+          set({ pinnedFiles: await api.togglePinnedFile(s.openFilePath) });
+        }
+      },
 
       goInbox: () => set({ view: "inbox", openDocId: null }),
 

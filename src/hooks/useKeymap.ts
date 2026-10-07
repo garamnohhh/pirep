@@ -46,6 +46,15 @@ export function useKeymap() {
         return;
       }
 
+      if (matchShortcut(e, sc.pin)) {
+        if ((s.view === "reader" && s.openDocId) || (s.view === "file-viewer" && s.openFilePath)) {
+          e.preventDefault();
+          void s.togglePin().catch((error) => console.error("Could not toggle pin:", error));
+        }
+        return;
+      }
+
+
       if (matchShortcut(e, sc.sidebar)) {
         e.preventDefault();
         s.toggleSidebar();
