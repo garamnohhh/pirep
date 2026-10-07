@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "node --experimental-strip-types src/lib/path.test.ts && node --experimental-strip-types src/lib/rename.test.ts && node --experimental-strip-types src/lib/find.test.ts && node --experimental-strip-types src/lib/wiki.test.ts && node --experimental-strip-types src/lib/slides.test.ts && node --experimental-strip-types src/lib/table.test.ts && node --experimental-strip-types src/lib/link-completion.test.ts && node --experimental-strip-types src/lib/previewKeys.test.ts && node --experimental-strip-types src/lib/open-file.test.ts && node --experimental-strip-types src/lib/window-shortcuts.test.ts && node --experimental-strip-types src/lib/external-link.test.ts && node --experimental-strip-types quicklook/renderer/minimal-renderer.test.ts",
+    "test": "node --experimental-strip-types src/lib/path.test.ts && node --experimental-strip-types src/lib/rename.test.ts && node --experimental-strip-types src/lib/find.test.ts && node --experimental-strip-types src/lib/wiki.test.ts && node --experimental-strip-types src/lib/slides.test.ts && node --experimental-strip-types src/lib/table.test.ts && node --experimental-strip-types src/lib/link-completion.test.ts && node --experimental-strip-types src/lib/previewKeys.test.ts && node --experimental-strip-types src/lib/open-file.test.ts && node --experimental-strip-types src/lib/window-shortcuts.test.ts && node --experimental-strip-types src/lib/external-link.test.ts && node --experimental-strip-types quicklook/renderer/minimal-renderer.test.ts && node --experimental-strip-types src/lib/defaultApp.test.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "RUSTFLAGS=\"--remap-path-prefix=$HOME=~ ${RUSTFLAGS:-}\" tauri",

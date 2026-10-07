@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LogoTile } from "../components/ui/Logo";
+import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { getVersion } from "@tauri-apps/api/app";
@@ -10,6 +11,7 @@ import type { Template } from "../store";
 import type { ShortcutsMap } from "../store";
 import { captureMode } from "../lib/captureMode";
 import { modalStack } from "../lib/modalStack";
+import { waitForMarkdownDefault, type MarkdownDefaultApp } from "../lib/defaultApp";
 
 type Tab = "appearance" | "editor" | "base" | "tracking" | "templates" | "account" | "shortcuts" | "about";
 
@@ -283,6 +285,42 @@ function BaseTab() {
   const docs = useDocs();
   const nonMd = useStore((s) => s.nonMdFiles);
   const [error, setError] = useState<string | null>(null);
+  const [markdownDefault, setMarkdownDefault] = useState<MarkdownDefaultApp | null>(null);
+  const [markdownDefaultError, setMarkdownDefaultError] = useState(false);
+  const [changingMarkdownDefault, setChangingMarkdownDefault] = useState(false);
+
+  const refreshMarkdownDefault = useCallback(async () => {
+    try {
+      const app = await invoke<MarkdownDefaultApp>("get_markdown_default_app");
+      setMarkdownDefault(app);
+      if (app.isSelf) setMarkdownDefaultError(false);
+    } catch {
+      setMarkdownDefault(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshMarkdownDefault();
+    window.addEventListener("focus", refreshMarkdownDefault);
+    return () => window.removeEventListener("focus", refreshMarkdownDefault);
+  }, [refreshMarkdownDefault]);
+
+  async function makeMarkdownDefault() {
+    setChangingMarkdownDefault(true);
+    setMarkdownDefaultError(false);
+    try {
+      await invoke("set_markdown_default_app");
+      const becameDefault = await waitForMarkdownDefault(
+        () => invoke<MarkdownDefaultApp>("get_markdown_default_app"),
+        setMarkdownDefault,
+      );
+      if (!becameDefault) setMarkdownDefaultError(true);
+    } catch {
+      setMarkdownDefaultError(true);
+    } finally {
+      setChangingMarkdownDefault(false);
+    }
+  }
 
   const host = syncHost(vaultRoot);
 
@@ -343,6 +381,32 @@ function BaseTab() {
         >
           Change
         </button>
+      </div>
+
+      <div style={{ marginTop: 28 }}>
+        <SectionLabel>Opening files</SectionLabel>
+        <Row label="Default app for Markdown" sub=".md and .markdown files from Finder">
+          <div className="flex items-center gap-3">
+            <span className="text-mid" style={{ fontSize: 12.5 }}>
+              {markdownDefault?.isSelf ? "pirep ✓" : markdownDefault?.name ?? "None"}
+            </span>
+            {!markdownDefault?.isSelf && (
+              <button
+                onClick={makeMarkdownDefault}
+                disabled={changingMarkdownDefault}
+                className="shrink-0 border border-line bg-surface px-3 text-[12.5px] font-semibold text-ink hover:border-mid disabled:opacity-50"
+                style={{ height: 32 }}
+              >
+                {changingMarkdownDefault ? "Changing…" : "Make pirep default"}
+              </button>
+            )}
+          </div>
+        </Row>
+        {markdownDefaultError && (
+          <div className="text-[12px]" style={{ color: "var(--color-red)", marginTop: -4 }}>
+            Couldn't change it. Use Finder: ⌘I › Open with › Change All.
+          </div>
+        )}
       </div>
 
       {host && (
