@@ -27,6 +27,9 @@ No server, no account, no cloud. The files stay in your folder; pirep only reads
 | Rollback | Write an older version back to the file |
 | Editing | `⌘E` opens the source; it saves itself 1.2 seconds after you stop typing |
 | Other files | PDFs, images, CSV, HTML and code files. HTML slides and PDFs go full screen for presenting |
+| Pinned | Pin any file — Markdown, HTML, PDF, CSV and more — with the pin button in the title bar or `⌘D`. Pinned files gather in the queue |
+| Properties | Add property lists pirep's own fields and the ones already used in your Base |
+| Default app | Settings › Base can make pirep the default app for Markdown files |
 | Finding | `⌘K` for documents and commands, `⌘F` inside the open document |
 | Quick Look | Press Space on a Markdown file in Finder to see it rendered |
 | Open from Finder | Markdown files open in their Base; files outside any Base open in their own window |
@@ -72,7 +75,7 @@ If macOS says the app is damaged, remove only its quarantine flag with `xattr -d
 
 - **Apple Silicon only** (M1 and later). It will not run on an Intel Mac.
 - Built on macOS 26, and still fine on 27.
-- The current release is 0.2.1, published on 2026-10-06.
+- The current release is `0.2.2`, published on 2026-10-07.
 
 ## Building from source
 
