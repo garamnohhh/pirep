@@ -8,4 +8,7 @@ equal(propertySuggestions([{ key: "author", count: 3 }, { key: "status", count: 
   pirep: ["pinned", "status", "tags", "created", "updated"].map((key) => ({ key })), base: [], create: null,
 });
 equal(propertySuggestions([{ key: "author", count: 3 }], [], "Pub Date"), { pirep: [], base: [], create: "pub_date" });
+equal(propertySuggestions([{ key: "owner", count: 2 }], ["title"], ""), {
+  pirep: ["pinned", "status", "tags", "created", "updated"].map((key) => ({ key })), base: [{ key: "owner", count: 2 }], create: null,
+});
 console.log("property suggestion tests passed");

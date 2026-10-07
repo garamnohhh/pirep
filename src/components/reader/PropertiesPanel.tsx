@@ -319,7 +319,7 @@ export function PropertiesPanel({
           {onFrontmatterChange && (
             <div className="border-t border-line px-3 py-1.5">
               {showAddInput ? (
-                <div className="relative">
+                <div>
                 <input
                   autoFocus
                   value={addKeyInput}
@@ -346,7 +346,7 @@ export function PropertiesPanel({
                   placeholder="Search or create a property…"
                   className="w-full rounded border border-line bg-paper px-2 py-0.5 text-ink outline-none focus:border-gold"
                 />
-                <div id="property-key-options" role="listbox" className="absolute z-20 mt-1 max-h-56 w-full overflow-auto border border-line bg-surface shadow-lg">
+                <div id="property-key-options" role="listbox" className="mt-1 max-h-56 w-full overflow-y-auto border border-line bg-surface">
                   {choices.length === 0 && <div className="px-2 py-1.5 text-muted">No properties</div>}
                   {suggestions.pirep.length > 0 && <SuggestionGroup label="pirep" keys={suggestions.pirep} offset={0} active={activeSuggestion} choose={handleAddKey} />}
                   {suggestions.base.length > 0 && <SuggestionGroup label="In this Base" keys={suggestions.base} offset={suggestions.pirep.length} active={activeSuggestion} choose={handleAddKey} />}
