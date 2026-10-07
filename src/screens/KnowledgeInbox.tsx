@@ -4,6 +4,8 @@ import { api } from "../lib/invoke";
 import { unreadCount, docName } from "../lib/types";
 import { modalStack } from "../lib/modalStack";
 import type { DocEntry } from "../lib/types";
+import { pinnedItems } from "../lib/pinnedItems";
+import { PinnedItemRow } from "../components/ui/PinnedItemRow";
 
 function timeAgo(mtime: number): string {
   const diff = Date.now() / 1000 - mtime;
@@ -33,6 +35,10 @@ function dateLabel(): string {
 export function KnowledgeInbox() {
   const docs = useDocs();
   const openDoc = useStore((s) => s.openDoc);
+  const openFile = useStore((s) => s.openFile);
+  const openDocId = useStore((s) => s.openDocId);
+  const openFilePath = useStore((s) => s.openFilePath);
+  const pinnedFiles = useStore((s) => s.pinnedFiles);
   const openDiff = useStore((s) => s.openDiff);
   const openTag = useStore((s) => s.openTag);
   const applyDb = useStore((s) => s.applyDb);
@@ -83,7 +89,7 @@ export function KnowledgeInbox() {
     () => docs.filter((d) => d.currentVersion > d.lastDecidedVersion).sort((a, b) => b.mtime - a.mtime),
     [docs],
   );
-  const pinned = useMemo(() => docs.filter((d) => d.pinned), [docs]);
+  const pinned = useMemo(() => pinnedItems(docs, pinnedFiles), [docs, pinnedFiles]);
   const recent = useMemo(
     () => [...docs].sort((a, b) => b.mtime - a.mtime).slice(0, 5),
     [docs],
@@ -262,16 +268,14 @@ export function KnowledgeInbox() {
             {pinned.length === 0 ? (
               <p className="text-muted" style={{ fontSize: 13 }}>No pinned notes.</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {pinned.map((d) => (
-                  <button
-                    key={d.docId}
-                    onClick={() => openDoc(d.docId)}
-                    className="border border-line bg-surface text-left hover:bg-tertiary transition-colors"
-                    style={{ padding: "13px 15px",  cursor: "pointer" }}
-                  >
-                    <div className="text-ink" style={{ fontSize: 14, fontWeight: 600 }}>{docName(d)}</div>
-                  </button>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {pinned.map((item) => (
+                  <PinnedItemRow
+                    key={item.kind === "doc" ? item.doc.docId : item.path}
+                    item={item}
+                    active={item.kind === "doc" ? openDocId === item.doc.docId : openFilePath === item.path}
+                    onOpen={() => item.kind === "doc" ? openDoc(item.doc.docId) : openFile(item.path)}
+                  />
                 ))}
               </div>
             )}

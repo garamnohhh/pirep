@@ -4,7 +4,8 @@ import { unreadCount, docName } from "../../lib/types";
 import { DocContextMenu } from "../ui/DocContextMenu";
 import type { CtxMenu } from "../ui/DocContextMenu";
 import type { DocEntry } from "../../lib/types";
-import { ExtChip } from "../ui/ExtChip";
+import { PinnedItemRow } from "../ui/PinnedItemRow";
+import { pinnedItems } from "../../lib/pinnedItems";
 
 // SideNav, straight off .gn-sidenav-item: 8px/16px padding, a 3px transparent
 // left border that turns accent on the current row, --surface behind it, and a
@@ -113,6 +114,7 @@ export function ReadingQueue() {
   const markReadMany = useStore((s) => s.markReadMany);
   const view = useStore((s) => s.view);
   const openId = useStore((s) => s.openDocId);
+  const openFilePath = useStore((s) => s.openFilePath);
   const showEmpty = useStore((s) => s.showEmptySections);
   const pinnedFiles = useStore((s) => s.pinnedFiles);
   const openFile = useStore((s) => s.openFile);
@@ -126,7 +128,7 @@ export function ReadingQueue() {
     .sort((a, b) => Math.max(b.mtime, b.created) - Math.max(a.mtime, a.created));
   const updates = withUnread.filter((d) => d.lastReadVersion > 0);
   const unread = withUnread.filter((d) => d.lastReadVersion === 0);
-  const pinned = docs.filter((d) => d.pinned);
+  const pinned = pinnedItems(docs, pinnedFiles);
   const recent = [...docs].sort((a, b) => b.mtime - a.mtime).slice(0, 12);
 
   const ctx = (d: DocEntry) => (x: number, y: number) => setCtxMenu({ x, y, doc: d });
@@ -200,23 +202,18 @@ export function ReadingQueue() {
         </Group>
       )}
 
-      {(pinned.length > 0 || pinnedFiles.length > 0 || showEmpty) && (
+      {(pinned.length > 0 || showEmpty) && (
         <Group label="Pinned">
-          {pinned.length + pinnedFiles.length > 0
-            ? <>
-              {pinned.map((d) => (
-                <Item
-                  key={d.docId}
-                  label={docName(d)}
-                  glyph="▌"
-                  active={openId === d.docId}
-                  title={stamp(d)}
-                  onClick={() => openDoc(d.docId)}
-                  onCtx={ctx(d)}
+          {pinned.length > 0
+            ? pinned.map((item) => (
+                <PinnedItemRow
+                  key={item.kind === "doc" ? item.doc.docId : item.path}
+                  item={item}
+                  active={item.kind === "doc" ? openId === item.doc.docId : openFilePath === item.path}
+                  onOpen={() => item.kind === "doc" ? openDoc(item.doc.docId) : openFile(item.path)}
+                  onContextMenu={item.kind === "doc" ? (e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, doc: item.doc }); } : undefined}
                 />
-              ))}
-              {pinnedFiles.map((path) => <button key={path} type="button" onClick={() => openFile(path)} className="flex w-full items-center gap-2 text-left text-[13px] text-muted transition-colors hover:text-ink" style={{ padding: "8px 16px", borderLeft: "3px solid transparent" }}><span className="min-w-0 flex-1 truncate">{path.split("/").pop()}</span><ExtChip name={path.split("/").pop() ?? path} /></button>)}
-              </>
+              ))
             : <Hint text="No pinned notes" />}
         </Group>
       )}
