@@ -262,6 +262,11 @@ pub fn scan_vault(
 }
 
 #[tauri::command]
+pub fn list_frontmatter_keys(state: State<VaultState>) -> Result<Vec<vault::frontmatter_keys::FrontmatterKeyCount>, String> {
+    vault::frontmatter_keys::collect(&get_root(&state)?)
+}
+
+#[tauri::command]
 pub fn read_doc(doc_id: String, state: State<VaultState>) -> Result<DocContent, String> {
     vault::read_doc(&get_root(&state)?, &doc_id)
 }

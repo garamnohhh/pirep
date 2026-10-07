@@ -6,6 +6,7 @@ import { slugify } from "../lib/markdown";
 import { resolveWiki } from "../lib/wiki";
 import { remapRenameReferences, renamedDocId } from "../lib/rename";
 import type { Db, DocEntry } from "../lib/types";
+import type { FrontmatterKeyCount } from "../lib/invoke";
 
 export type Theme = "light" | "dark";
 export type SidebarTab = "queue" | "files";
@@ -119,6 +120,7 @@ interface AppState {
   db: Db | null;
   scanning: boolean;
   nonMdFiles: string[];
+  frontmatterKeys: FrontmatterKeyCount[];
   allDirs: string[];
   // navigation / reader
   view: View;
@@ -224,6 +226,7 @@ function _build() { return create<AppState>()(
       db: null,
       scanning: false,
       nonMdFiles: [],
+      frontmatterKeys: [],
       allDirs: [],
       view: initialExternalFilePath ? "file-viewer" : "onboarding",
       previousView: null,
@@ -390,8 +393,8 @@ function _build() { return create<AppState>()(
 
       loadNonMdFiles: async () => {
         try {
-          const [files, dirs] = await Promise.all([api.listFiles(), api.listDirs()]);
-          set({ nonMdFiles: files, allDirs: dirs });
+          const [files, dirs, frontmatterKeys] = await Promise.all([api.listFiles(), api.listDirs(), api.listFrontmatterKeys()]);
+          set({ nonMdFiles: files, allDirs: dirs, frontmatterKeys });
         } catch { /* silent */ }
       },
 

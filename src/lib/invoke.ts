@@ -1,8 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Db, DocContent, DiffResult, ChangeRecord, DocEntry } from "./types";
 
+export interface FrontmatterKeyCount { key: string; count: number }
+
 export const api = {
   scanVault: (path: string) => invoke<Db>("scan_vault", { path }),
+  listFrontmatterKeys: () => invoke<FrontmatterKeyCount[]>("list_frontmatter_keys"),
   readDoc: (docId: string) => invoke<DocContent>("read_doc", { docId }),
   writeDoc: (docId: string, content: string) =>
     invoke<Db>("write_doc", { docId, content }),

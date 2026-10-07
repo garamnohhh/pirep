@@ -94,6 +94,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::scan_vault,
+            commands::list_frontmatter_keys,
             commands::read_doc,
             commands::write_doc,
             commands::mark_read,

@@ -3,6 +3,7 @@ pub mod db;
 pub mod diff;
 pub mod hash;
 pub mod snapshot;
+pub mod frontmatter_keys;
 
 use change::ChangeRecord;
 use db::{Db, DocEntry};

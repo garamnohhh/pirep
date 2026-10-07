@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import { useStore } from "../../store";
+import { propertySuggestions } from "../../lib/propertySuggestions";
 
 interface Field {
   key: string;
@@ -39,6 +41,8 @@ export function PropertiesPanel({
   const [tagInput, setTagInput] = useState("");
   const [showAddInput, setShowAddInput] = useState(false);
   const [addKeyInput, setAddKeyInput] = useState("");
+  const [activeSuggestion, setActiveSuggestion] = useState(0);
+  const baseKeys = useStore((s) => s.frontmatterKeys);
   const statusRef = useRef<HTMLInputElement>(null);
 
   if (!frontmatter) return null;
@@ -47,6 +51,8 @@ export function PropertiesPanel({
 
   const byKey = Object.fromEntries(fields.map((f) => [f.key, f.value]));
   const existingKeys = new Set(fields.map((f) => f.key));
+  const suggestions = propertySuggestions(baseKeys, [...existingKeys], addKeyInput);
+  const choices = [...suggestions.pirep, ...suggestions.base, ...(suggestions.create ? [{ key: suggestions.create }] : [])];
   const tagList = parseTags(byKey.tags ?? "");
   const pinned = isPinned(byKey.pinned ?? "");
 
@@ -313,14 +319,23 @@ export function PropertiesPanel({
           {onFrontmatterChange && (
             <div className="border-t border-line px-3 py-1.5">
               {showAddInput ? (
+                <div className="relative">
                 <input
                   autoFocus
                   value={addKeyInput}
-                  onChange={(e) => setAddKeyInput(e.target.value)}
+                  role="combobox"
+                  aria-expanded="true"
+                  aria-controls="property-key-options"
+                  aria-autocomplete="list"
+                  onChange={(e) => { setAddKeyInput(e.target.value); setActiveSuggestion(0); }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      handleAddKey(addKeyInput);
+                      if (choices[activeSuggestion]) handleAddKey(choices[activeSuggestion].key);
+                    }
+                    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setActiveSuggestion((i) => Math.max(0, Math.min(choices.length - 1, i + (e.key === "ArrowDown" ? 1 : -1))));
                     }
                     if (e.key === "Escape") {
                       setShowAddInput(false);
@@ -328,13 +343,16 @@ export function PropertiesPanel({
                     }
                     e.stopPropagation();
                   }}
-                  onBlur={() => {
-                    setShowAddInput(false);
-                    setAddKeyInput("");
-                  }}
-                  placeholder="Property name… (Enter to add)"
+                  placeholder="Search or create a property…"
                   className="w-full rounded border border-line bg-paper px-2 py-0.5 text-ink outline-none focus:border-gold"
                 />
+                <div id="property-key-options" role="listbox" className="absolute z-20 mt-1 max-h-56 w-full overflow-auto border border-line bg-surface shadow-lg">
+                  {choices.length === 0 && <div className="px-2 py-1.5 text-muted">No properties</div>}
+                  {suggestions.pirep.length > 0 && <SuggestionGroup label="pirep" keys={suggestions.pirep} offset={0} active={activeSuggestion} choose={handleAddKey} />}
+                  {suggestions.base.length > 0 && <SuggestionGroup label="In this Base" keys={suggestions.base} offset={suggestions.pirep.length} active={activeSuggestion} choose={handleAddKey} />}
+                  {suggestions.create && <button type="button" role="option" aria-selected={activeSuggestion === choices.length - 1} onMouseDown={(e) => e.preventDefault()} onClick={() => handleAddKey(suggestions.create!)} className={`block w-full px-2 py-1.5 text-left ${activeSuggestion === choices.length - 1 ? "bg-tertiary text-ink" : "text-muted"}`}>+ Create "{suggestions.create}"</button>}
+                </div>
+                </div>
               ) : (
                 <button
                   onClick={() => setShowAddInput(true)}
@@ -349,6 +367,10 @@ export function PropertiesPanel({
       )}
     </div>
   );
+}
+
+function SuggestionGroup({ label, keys, offset, active, choose }: { label: string; keys: { key: string; count?: number }[]; offset: number; active: number; choose: (key: string) => void }) {
+  return <div><div className="px-2 pt-1.5 text-[10px] font-bold uppercase tracking-wider text-mid">{label}</div>{keys.map(({ key, count }, i) => <button type="button" role="option" aria-selected={active === offset + i} key={key} onMouseDown={(e) => e.preventDefault()} onClick={() => choose(key)} className={`flex w-full items-center px-2 py-1 text-left ${active === offset + i ? "bg-tertiary text-ink" : "text-muted"}`}><span>{key}</span>{count !== undefined && <span className="ml-auto font-mono text-[10px] text-mid">{count}</span>}</button>)}</div>;
 }
 
 function InlineText({
