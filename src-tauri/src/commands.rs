@@ -53,23 +53,25 @@ struct Coalescer {
     md: bool,
     other: bool,
     last_ms: u64,
+    paths: std::collections::BTreeSet<String>,
 }
 
 impl Coalescer {
-    fn note(&mut self, md: bool, other: bool, now: u64) {
+    fn note(&mut self, md: bool, other: bool, paths: Vec<String>, now: u64) {
         if !(md || other) {
             return;
         }
         self.md |= md;
         self.other |= other;
+        self.paths.extend(paths);
         self.last_ms = now;
     }
 
-    fn take_if_quiet(&mut self, now: u64, quiet: u64) -> Option<(bool, bool)> {
+    fn take_if_quiet(&mut self, now: u64, quiet: u64) -> Option<(bool, bool, Vec<String>)> {
         if !(self.md || self.other) || now.saturating_sub(self.last_ms) < quiet {
             return None;
         }
-        let out = (self.md, self.other);
+        let out = (self.md, self.other, std::mem::take(&mut self.paths).into_iter().collect());
         self.md = false;
         self.other = false;
         Some(out)
@@ -175,12 +177,13 @@ fn delete_raw_file_at(root: &Path, rel_path: &str) -> Result<(), String> {
 /// Split watcher paths into "needs a full markdown rescan" vs "only the non-md
 /// file listing changed". Skips .pirep, hidden dirs, .DS_Store and volatile
 /// sidecars (sqlite WAL, logs, temp) whose churn used to cause rescan storms.
-fn classify_paths(paths: &[PathBuf], pirep: &std::path::Path) -> (bool, bool) {
+fn classify_paths(paths: &[PathBuf], root: &Path, pirep: &std::path::Path) -> (bool, bool, Vec<String>) {
     const VOLATILE: &[&str] = &[
         "db", "db-shm", "db-wal", "sqlite", "sqlite3", "log", "tmp", "temp", "swp", "lock",
         "part", "crdownload",
     ];
     let (mut md, mut other) = (false, false);
+    let mut relative = std::collections::BTreeSet::new();
     for p in paths {
         let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("");
         let visible = !p.starts_with(pirep)
@@ -195,13 +198,16 @@ fn classify_paths(paths: &[PathBuf], pirep: &std::path::Path) -> (bool, bool) {
         if !visible {
             continue;
         }
+        if let Ok(path) = p.strip_prefix(root) {
+            if let Some(path) = path.to_str() { relative.insert(path.replace('\\', "/")); }
+        }
         if ext == "md" {
             md = true;
         } else {
             other = true;
         }
     }
-    (md, other)
+    (md, other, relative.into_iter().collect())
 }
 
 #[tauri::command]
@@ -218,15 +224,16 @@ pub fn scan_vault(
     // (Re)start the file watcher. Events are coalesced and announced once the
     // filesystem goes quiet — see Coalescer for why the leading edge lost changes.
     let pirep = r.join(".pirep");
+    let watch_root = r.clone();
     let pending = state.pending.clone();
 
     let mut w = notify::recommended_watcher(move |res: notify::Result<Event>| {
         if let Ok(ev) = res {
-            let (md_changed, file_changed) = classify_paths(&ev.paths, &pirep);
+            let (md_changed, file_changed, paths) = classify_paths(&ev.paths, &watch_root, &pirep);
             pending
                 .lock()
                 .unwrap()
-                .note(md_changed, file_changed, now_ms());
+                .note(md_changed, file_changed, paths, now_ms());
         }
     })
     .map_err(|e| e.to_string())?;
@@ -246,13 +253,13 @@ pub fn scan_vault(
             std::thread::spawn(move || loop {
                 std::thread::sleep(std::time::Duration::from_millis(100));
                 let ready = pending.lock().unwrap().take_if_quiet(now_ms(), QUIET_MS);
-                if let Some((md, other)) = ready {
+                if let Some((md, other, paths)) = ready {
                     // A markdown rescan refreshes the file listing too, so the
                     // heavier event stands in for both.
                     if md {
-                        app_h.emit("vault-changed", ()).ok();
+                        app_h.emit("vault-changed", &paths).ok();
                     } else if other {
-                        app_h.emit("files-changed", ()).ok();
+                        app_h.emit("files-changed", &paths).ok();
                     }
                 }
             });
@@ -502,15 +509,15 @@ mod tests {
     #[test]
     fn a_burst_announces_every_kind_it_contained() {
         let mut c = Coalescer::default();
-        c.note(false, true, 1000); // newfolder
-        c.note(false, true, 1000); // a.html
-        c.note(true, false, 1000); // b.md
-        c.note(true, false, 1000); // c.md
+        c.note(false, true, vec!["newfolder/a.html".into()], 1000);
+        c.note(false, true, vec!["newfolder/b.html".into()], 1000);
+        c.note(true, false, vec!["b.md".into()], 1000);
+        c.note(true, false, vec!["c.md".into()], 1000);
 
         // Nothing escapes while the filesystem is still busy.
         assert_eq!(c.take_if_quiet(1200, QUIET_MS), None);
         // Once quiet, both kinds are reported — not just the first one seen.
-        assert_eq!(c.take_if_quiet(1500, QUIET_MS), Some((true, true)));
+        assert_eq!(c.take_if_quiet(1500, QUIET_MS), Some((true, true, vec!["b.md".into(), "c.md".into(), "newfolder/a.html".into(), "newfolder/b.html".into()])));
         // And the pending state is cleared, so it fires once per burst.
         assert_eq!(c.take_if_quiet(9000, QUIET_MS), None);
     }
@@ -518,17 +525,17 @@ mod tests {
     #[test]
     fn trailing_events_extend_the_quiet_window() {
         let mut c = Coalescer::default();
-        c.note(false, true, 1000);
+        c.note(false, true, vec!["a.html".into()], 1000);
         assert_eq!(c.take_if_quiet(1300, QUIET_MS), None);
-        c.note(false, true, 1350); // still arriving — wait longer
+        c.note(false, true, vec!["b.html".into()], 1350);
         assert_eq!(c.take_if_quiet(1600, QUIET_MS), None);
-        assert_eq!(c.take_if_quiet(1800, QUIET_MS), Some((false, true)));
+        assert_eq!(c.take_if_quiet(1800, QUIET_MS), Some((false, true, vec!["a.html".into(), "b.html".into()])));
     }
 
     #[test]
     fn ignored_paths_never_arm_the_flush() {
         let mut c = Coalescer::default();
-        c.note(false, false, 1000); // .pirep snapshot, sqlite WAL, .DS_Store…
+        c.note(false, false, vec![], 1000);
         assert_eq!(c.take_if_quiet(9000, QUIET_MS), None);
     }
 
@@ -539,17 +546,17 @@ mod tests {
         let p = |s: &str| root.join(s);
 
         // a new .html → cheap file-list refresh only (the bug: it was ignored)
-        assert_eq!(classify_paths(&[p("outputs/14-tool.html")], &pirep), (false, true));
+        assert_eq!(classify_paths(&[p("outputs/14-tool.html")], &root, &pirep), (false, true, vec!["outputs/14-tool.html".into()]));
         // markdown → full rescan
-        assert_eq!(classify_paths(&[p("notes/a.md")], &pirep), (true, false));
+        assert_eq!(classify_paths(&[p("notes/a.md")], &root, &pirep), (true, false, vec!["notes/a.md".into()]));
         // both in one event
-        assert_eq!(classify_paths(&[p("a.md"), p("b.csv")], &pirep), (true, true));
+        assert_eq!(classify_paths(&[p("a.md"), p("b.csv")], &root, &pirep), (true, true, vec!["a.md".into(), "b.csv".into()]));
         // volatile sidecars / snapshots / hidden dirs / .DS_Store → nothing
         for noisy in ["bus.db-shm", "bus.db-wal", "app.log", "x.tmp", ".DS_Store"] {
-            assert_eq!(classify_paths(&[p(noisy)], &pirep), (false, false), "{noisy}");
+            assert_eq!(classify_paths(&[p(noisy)], &root, &pirep), (false, false, vec![]), "{noisy}");
         }
-        assert_eq!(classify_paths(&[pirep.join("snapshots/x.md")], &pirep), (false, false));
-        assert_eq!(classify_paths(&[p(".git/index")], &pirep), (false, false));
+        assert_eq!(classify_paths(&[pirep.join("snapshots/x.md")], &root, &pirep), (false, false, vec![]));
+        assert_eq!(classify_paths(&[p(".git/index")], &root, &pirep), (false, false, vec![]));
     }
 
     #[test]

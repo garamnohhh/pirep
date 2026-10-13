@@ -13,9 +13,11 @@ import { EditorView } from "@codemirror/view";
 import { openWithOtherApp, revealInFinder } from "../../lib/handoff";
 import {
   previewExternalUrlFromMessage, previewKeyFromMessage, previewLocationFromMessage,
-  previewNavigationAction, previewPageChanged,
+  previewNavigationAction, previewPageChanged, previewRefreshStateFromMessage,
 } from "../../lib/previewKeys";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { listen } from "@tauri-apps/api/event";
+import { htmlAffectedByChanges } from "../../lib/htmlRefresh";
 import { ExtChip } from "../ui/ExtChip";
 
 // svg moved out of IMAGE_EXTS so it becomes editable text
@@ -112,13 +114,22 @@ function FileEditorHost({
 }
 
 function HtmlPreview({
-  src, name, frame, onLocation,
+  src, name, frame, onLocation, reloadToken,
 }: {
   src: string;
   name: string;
   frame: { current: HTMLIFrameElement | null };
   onLocation: (href: string) => void;
+  reloadToken: number;
 }) {
+  const [frameUrl, setFrameUrl] = useState(src);
+  const [frameKey, setFrameKey] = useState(0);
+  const savedScroll = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (!reloadToken) return;
+    frame.current?.contentWindow?.postMessage({ type: "pirep-preview-refresh-state" }, "pirepfile://localhost");
+  }, [reloadToken, frame]);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -128,6 +139,13 @@ function HtmlPreview({
       if (externalUrl) { void openUrl(externalUrl).catch(() => console.error("Could not open external preview link")); return; }
       const location = previewLocationFromMessage(event, source);
       if (location) { onLocation(location); return; }
+      const refresh = previewRefreshStateFromMessage(event, source);
+      if (refresh) {
+        savedScroll.current = { x: refresh.x, y: refresh.y };
+        setFrameUrl(refresh.href);
+        setFrameKey((key) => key + 1);
+        return;
+      }
       const key = previewKeyFromMessage(event, source);
       if (key) {
         const action = previewNavigationAction(key);
@@ -144,9 +162,13 @@ function HtmlPreview({
 
   return (
     <iframe
+      key={frameKey}
       ref={frame}
-      src={src}
-      onLoad={() => frame.current?.contentWindow?.postMessage({ type: "pirep-preview-request-state" }, "pirepfile://localhost")}
+      src={frameUrl}
+      onLoad={() => {
+        frame.current?.contentWindow?.postMessage({ type: "pirep-preview-request-state" }, "pirepfile://localhost");
+        if (savedScroll.current) frame.current?.contentWindow?.postMessage({ type: "pirep-preview-restore-scroll", ...savedScroll.current }, "pirepfile://localhost");
+      }}
       sandbox="allow-scripts allow-same-origin allow-forms"
       style={{ flex: 1, border: "none", width: "100%", height: "100%" }}
       title={name}
@@ -336,7 +358,7 @@ function RenderView({
   frame: { current: HTMLIFrameElement | null }; onLocation: (href: string) => void; reset: number;
 }) {
   if ((fileExt === "html" || fileExt === "htm") && htmlSrc) {
-    return <HtmlPreview key={`${htmlSrc}:${reset}`} src={htmlSrc} name={name} frame={frame} onLocation={onLocation} />;
+    return <HtmlPreview key={htmlSrc} src={htmlSrc} name={name} frame={frame} onLocation={onLocation} reloadToken={reset} />;
   }
   if (fileExt === "svg") return <SvgPreview text={text} name={name} />;
   if (fileExt === "csv" || fileExt === "tsv") return <CsvPreview text={text} fileExt={fileExt} />;
@@ -356,6 +378,8 @@ export function FileViewer() {
   const previewFrame = useRef<HTMLIFrameElement>(null);
   const [previewLocation, setPreviewLocation] = useState<{ src: string; href: string } | null>(null);
   const [previewReset, setPreviewReset] = useState(0);
+  const [fileChangedOnDisk, setFileChangedOnDisk] = useState(false);
+  const deferredPreview = useRef(false);
 
   const [b64, setB64] = useState<string | null>(null);
   const [text, setText] = useState<string>("");
@@ -378,6 +402,24 @@ export function FileViewer() {
   const isImage = IMAGE_EXTS.has(fileExt);
   const isPdf = fileExt === "pdf";
   const isHtml = fileExt === "html" || fileExt === "htm";
+
+  useEffect(() => {
+    if (!isHtml || externalFilePath) return;
+    const changed = (paths: string[]) => {
+      if (!htmlAffectedByChanges(relPath, paths)) return;
+      if (fileEditMode) {
+        if (!paths.includes(relPath)) return;
+        if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+        void api.readRawFile(relPath).then((data) => {
+          if (b64ToUtf8(data) !== draft.current) setFileChangedOnDisk(true);
+        }).catch(() => setFileChangedOnDisk(true));
+      } else if (showSlides) deferredPreview.current = true;
+      else setPreviewReset((n) => n + 1);
+    };
+    const a = listen<string[]>("vault-changed", (event) => changed(event.payload));
+    const b = listen<string[]>("files-changed", (event) => changed(event.payload));
+    return () => { void a.then((stop) => stop()); void b.then((stop) => stop()); };
+  }, [relPath, isHtml, externalFilePath, fileEditMode, showSlides]);
 
   const htmlSrc = isHtml && vaultRoot ? assetFileHref(vaultRoot, relPath) : undefined;
   const onPreviewLocation = useCallback((href: string) => {
@@ -422,6 +464,7 @@ export function FileViewer() {
     draft.current = value;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(async () => {
+      saveTimer.current = null;
       try { await api.writeRawFile(relPath, draft.current); } catch { /* silent */ }
     }, SAVE_DELAY);
   }
@@ -452,7 +495,10 @@ export function FileViewer() {
       htmlSrc={htmlSrc}
       pdfSrc={pdfSrc}
       name={name}
-      onClose={() => setShowSlides(false)}
+      onClose={() => {
+        setShowSlides(false);
+        if (deferredPreview.current) { deferredPreview.current = false; setPreviewReset((n) => n + 1); }
+      }}
     />
   );
 
@@ -511,6 +557,19 @@ export function FileViewer() {
             )}
           </div>
         </div>
+        {fileEditMode && fileChangedOnDisk && (
+          <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-2 bg-[var(--color-ink)] px-3 py-1 text-xs text-[var(--color-paper)]">
+            <span>This file changed on disk.</span>
+            <button className="underline" onClick={async () => {
+              if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+              try {
+                const data = await api.readRawFile(relPath);
+                const diskText = b64ToUtf8(data);
+                draft.current = diskText; setB64(data); setText(diskText); setFileChangedOnDisk(false);
+              } catch (e) { setError(String(e)); }
+            }}>Reload</button>
+          </div>
+        )}
         {fileEditMode && (
           <div
             className="pointer-events-none absolute inset-[10px]"

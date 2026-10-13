@@ -21,7 +21,7 @@ addEventListener('keydown',e=>{const nav=e.metaKey&&!e.ctrlKey&&!e.altKey&&!e.sh
 document.addEventListener('click',()=>{if(presenting)show(index+1)});
 function locationState(){parent.postMessage({type:'pirep-preview-location',href:location.href},'*')}
 addEventListener('pageshow',locationState);addEventListener('popstate',locationState);addEventListener('hashchange',locationState);locationState();
-addEventListener('message',e=>{if(e.source!==parent)return;const d=e.data;if(d?.type==='pirep-preview-request-state')locationState();if(d?.type==='pirep-preview-command'){if(d.action==='back')history.back();else if(d.action==='forward')history.forward()}});
+addEventListener('message',e=>{if(e.source!==parent)return;const d=e.data;if(d?.type==='pirep-preview-request-state')locationState();if(d?.type==='pirep-preview-refresh-state')parent.postMessage({type:'pirep-preview-refresh-state',href:location.href,x:scrollX,y:scrollY},'*');if(d?.type==='pirep-preview-restore-scroll')requestAnimationFrame(()=>scrollTo(d.x,d.y));if(d?.type==='pirep-preview-command'){if(d.action==='back')history.back();else if(d.action==='forward')history.forward()}});
 document.addEventListener('click',e=>{const a=e.target instanceof Element?e.target.closest('a[href]'):null;if(!a)return;let url;try{url=new URL(a.href,location.href)}catch{e.preventDefault();return}if(url.protocol==='https:'){e.preventDefault();parent.postMessage({type:'pirep-external-link',url:url.href},'*');return}if(url.protocol==='pirepfile:'&&url.hostname==='localhost'){if(url.pathname===location.pathname&&url.search===location.search)return;e.preventDefault();location.assign(url.href);return}e.preventDefault()},true);
 })()</script>"#;
 
@@ -251,6 +251,15 @@ mod tests {
             assert_eq!(response.body().len(), body.len());
         }
 
+        let html = vault.join("fresh.html");
+        std::fs::write(&html, "<html><body>before</body></html>").unwrap();
+        let initial = serve(Some(vault.clone()), html.to_str().unwrap());
+        assert!(initial.body().windows(6).any(|part| part == b"before"));
+        std::fs::write(&html, "<html><body>after</body></html>").unwrap();
+        let refreshed = serve(Some(vault.clone()), html.to_str().unwrap());
+        assert_eq!(refreshed.headers()["Cache-Control"], "no-store");
+        assert!(refreshed.body().windows(5).any(|part| part == b"after"));
+
         std::fs::remove_dir_all(&vault).ok();
     }
 
@@ -314,6 +323,8 @@ mod tests {
         assert!(injected.contains("'pirep-slides-command'"));
         assert!(injected.contains("'pirep-slides-state'"));
         assert!(injected.contains("'pirep-preview-location'"));
+        assert!(injected.contains("'pirep-preview-refresh-state'"));
+        assert!(injected.contains("'pirep-preview-restore-scroll'"));
         assert!(injected.contains("'pirep-external-link'"));
         assert!(injected.contains("'pirep-preview-command'"));
     }

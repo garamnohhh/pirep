@@ -46,6 +46,19 @@ export function previewLocationFromMessage(event: MessageEvent, frame: Window): 
   } catch { return null; }
 }
 
+export function previewRefreshStateFromMessage(event: MessageEvent, frame: Window): { href: string; x: number; y: number } | null {
+  const data = previewMessage(event, frame, "pirep-preview-refresh-state");
+  if (!data || typeof data.href !== "string" || data.href.length > 8192
+    || typeof data.x !== "number" || !Number.isFinite(data.x)
+    || typeof data.y !== "number" || !Number.isFinite(data.y)) return null;
+  try {
+    const url = new URL(data.href);
+    return url.protocol === "pirepfile:" && url.hostname === "localhost" && !url.port && !url.username && !url.password
+      ? { href: url.href, x: data.x, y: data.y }
+      : null;
+  } catch { return null; }
+}
+
 export function previewPageChanged(current: string, original: string): boolean {
   try {
     const a = new URL(current), b = new URL(original);

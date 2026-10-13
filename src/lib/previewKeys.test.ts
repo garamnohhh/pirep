@@ -1,6 +1,7 @@
 import {
   previewExternalUrlFromMessage, previewKeyFromMessage, previewLocationFromMessage,
   previewNavigationAction, previewPageChanged,
+  previewRefreshStateFromMessage,
 } from "./previewKeys.ts";
 
 function equal(actual: unknown, expected: unknown) {
@@ -46,6 +47,12 @@ for (const href of ["https://example.com", "http://example.com", "javascript:ale
 }
 equal(previewPageChanged("pirepfile://localhost/vault/other.html#part", "pirepfile://localhost/vault/start.html"), true);
 equal(previewPageChanged("pirepfile://localhost/vault/start.html#part", "pirepfile://localhost/vault/start.html"), false);
+equal(previewRefreshStateFromMessage(event(frame, "pirepfile://localhost", {
+  type: "pirep-preview-refresh-state", href: "pirepfile://localhost/vault/other.html#x", x: 12, y: 240,
+}), frame), { href: "pirepfile://localhost/vault/other.html#x", x: 12, y: 240 });
+equal(previewRefreshStateFromMessage(event(frame, "https://example.com", {
+  type: "pirep-preview-refresh-state", href: "pirepfile://localhost/a.html", x: 1, y: 2,
+}), frame), null);
 equal(previewNavigationAction({ key: "[", metaKey: true, ctrlKey: false, altKey: false, shiftKey: false }), "back");
 equal(previewNavigationAction({ key: "]", metaKey: true, ctrlKey: false, altKey: false, shiftKey: false }), "forward");
 equal(previewNavigationAction({ key: "[", metaKey: false, ctrlKey: false, altKey: false, shiftKey: false }), null);
