@@ -75,7 +75,7 @@ If macOS says the app is damaged, remove only its quarantine flag with `xattr -d
 
 - **Apple Silicon only** (M1 and later). It will not run on an Intel Mac.
 - Built on macOS 26, and still fine on 27.
-- The current release is `0.2.3`, published on 2026-10-07.
+- The current release is `0.2.4`, published on 2026-10-16.
 
 ## Building from source
 
