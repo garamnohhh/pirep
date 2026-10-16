@@ -6,7 +6,7 @@ use crate::vault::DocContent;
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use tauri::{Emitter, State};
+use tauri::{Emitter, State, Webview};
 use tauri_plugin_opener::OpenerExt;
 
 pub struct VaultState {
@@ -144,6 +144,18 @@ fn external_markdown_path(path: &str) -> Result<PathBuf, String> {
         return Err("not a Markdown file".to_string());
     }
     Ok(path)
+}
+
+#[tauri::command]
+pub fn read_external_html(path: String, webview: Webview, roots: State<'_, crate::external_files::ExternalFileRoots>) -> Result<String, String> {
+    let file = crate::external_files::registered_html_path(&path, webview.label(), &roots)?;
+    std::fs::read_to_string(file).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn write_external_html(path: String, content: String, webview: Webview, roots: State<'_, crate::external_files::ExternalFileRoots>) -> Result<(), String> {
+    let file = crate::external_files::registered_html_path(&path, webview.label(), &roots)?;
+    std::fs::write(file, content.as_bytes()).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -557,6 +569,50 @@ mod tests {
         }
         assert_eq!(classify_paths(&[pirep.join("snapshots/x.md")], &root, &pirep), (false, false, vec![]));
         assert_eq!(classify_paths(&[p(".git/index")], &root, &pirep), (false, false, vec![]));
+    }
+
+    #[test]
+    fn real_watcher_reports_html_after_overwrite_and_atomic_rename() {
+        use std::sync::mpsc;
+        use std::time::{Duration, Instant};
+
+        let root = std::env::temp_dir().join(format!("pirep-watch-{}-{}", std::process::id(), now_ms()));
+        std::fs::create_dir_all(&root).unwrap();
+        let root = root.canonicalize().unwrap();
+        for index in 0..2 { std::fs::write(root.join(format!("preview-{index}.html")), "before").unwrap(); }
+        std::thread::sleep(Duration::from_millis(1100));
+        let (tx, rx) = mpsc::channel();
+        let watch_root = root.clone();
+        let pirep = root.join(".pirep");
+        let mut watcher = notify::PollWatcher::new(move |event: notify::Result<Event>| {
+            if let Ok(event) = event {
+                let classified = classify_paths(&event.paths, &watch_root, &pirep).2;
+                let _ = tx.send(classified);
+            }
+        }, notify::Config::default().with_poll_interval(Duration::from_millis(50))).unwrap();
+        watcher.watch(&root, RecursiveMode::Recursive).unwrap();
+        std::thread::sleep(Duration::from_millis(250));
+        for (index, atomic) in [false, true].into_iter().enumerate() {
+            let name = format!("preview-{index}.html");
+            let destination = root.join(&name);
+            if atomic {
+                let temporary = root.join("preview.tmp");
+                std::fs::write(&temporary, "after").unwrap();
+                std::fs::rename(&temporary, &destination).unwrap();
+            } else {
+                std::fs::write(&destination, "after").unwrap();
+            }
+            let deadline = Instant::now() + Duration::from_secs(3);
+            let mut found = false;
+            while Instant::now() < deadline {
+                if let Ok(paths) = rx.recv_timeout(Duration::from_millis(100)) {
+                    if paths.iter().any(|path| path == &name) { found = true; break; }
+                }
+            }
+            assert!(found, "watcher did not report {name} (atomic rename: {atomic})");
+        }
+        drop(watcher);
+        std::fs::remove_dir_all(root).ok();
     }
 
     #[test]

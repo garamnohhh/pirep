@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Mutex;
-use tauri::{State, Webview};
+use notify::Watcher;
+use tauri::{Emitter, Manager, State, Webview};
 
 #[derive(Default)]
 pub struct ExternalFileRoots(Mutex<HashMap<String, PathBuf>>);
@@ -22,8 +23,8 @@ impl ExternalFileRoots {
             return Err("not an external document window".into());
         }
         let file = Path::new(file).canonicalize().map_err(|e| e.to_string())?;
-        if !is_markdown(&file) || has_hidden_component(&file) {
-            return Err("not an accessible Markdown file".into());
+        if !(is_markdown(&file) || is_html(&file)) || has_hidden_component(&file) {
+            return Err("not an accessible document file".into());
         }
         let root = file.parent().ok_or("invalid Markdown path")?.to_path_buf();
         let mut roots = self.0.lock().map_err(|_| "external roots unavailable")?;
@@ -36,6 +37,59 @@ impl ExternalFileRoots {
         roots.insert(label.to_string(), root);
         Ok(())
     }
+}
+
+pub fn registered_html_path(path: &str, label: &str, roots: &ExternalFileRoots) -> Result<PathBuf, String> {
+    let root = roots.get(label).ok_or("external file root is not registered")?;
+    let file = Path::new(path).canonicalize().map_err(|e| e.to_string())?;
+    if !file.is_file() || !is_html(&file) || has_hidden_component(&file) || !file.starts_with(root) {
+        return Err("not an accessible HTML file".into());
+    }
+    Ok(file)
+}
+
+#[derive(Default)]
+pub struct ExternalHtmlWatchers(Mutex<HashMap<String, notify::RecommendedWatcher>>);
+
+impl ExternalHtmlWatchers {
+    pub fn remove(&self, label: &str) {
+        if let Ok(mut watchers) = self.0.lock() { watchers.remove(label); }
+    }
+}
+
+#[tauri::command]
+pub fn watch_external_html(
+    path: String,
+    webview: Webview,
+    roots: State<'_, ExternalFileRoots>,
+    watchers: State<'_, ExternalHtmlWatchers>,
+) -> Result<(), String> {
+    let label = webview.label().to_string();
+    let file = Path::new(&path).canonicalize().map_err(|e| e.to_string())?;
+    if !is_html(&file) || roots.get(&label).as_deref() != file.parent() {
+        return Err("external HTML file is not registered".into());
+    }
+    let root = file.parent().ok_or("invalid HTML path")?.to_path_buf();
+    let shallow = is_shallow_root(&root, &home_dir());
+    let watch_root = root.clone();
+    let event_label = label.clone();
+    let app = webview.app_handle().clone();
+    let mut watcher = notify::recommended_watcher(move |event: notify::Result<notify::Event>| {
+        if let Ok(event) = event {
+            let paths: Vec<String> = event.paths.into_iter().filter_map(|changed| {
+                let changed = changed.canonicalize().ok()?;
+                if !changed.starts_with(&watch_root) || has_hidden_component(&changed) { return None; }
+                if shallow && changed.parent() != Some(watch_root.as_path()) { return None; }
+                let extension = changed.extension().and_then(|ext| ext.to_str()).unwrap_or("");
+                if ["db", "db-shm", "db-wal", "sqlite", "sqlite3", "log", "tmp", "temp", "swp", "lock", "part", "crdownload"].contains(&extension) || changed.file_name().is_some_and(|name| name == ".DS_Store") { return None; }
+                Some(changed.strip_prefix(&watch_root).ok()?.to_string_lossy().replace('\\', "/"))
+            }).collect();
+            if !paths.is_empty() { let _ = app.emit_to(&event_label, "external-html-changed", paths); }
+        }
+    }).map_err(|e| e.to_string())?;
+    watcher.watch(&root, if shallow { notify::RecursiveMode::NonRecursive } else { notify::RecursiveMode::Recursive }).map_err(|e| e.to_string())?;
+    watchers.0.lock().map_err(|_| "external watchers unavailable")?.insert(label, watcher);
+    Ok(())
 }
 
 #[tauri::command]
@@ -76,6 +130,12 @@ fn is_markdown(path: &Path) -> bool {
         .is_some_and(|ext| ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown"))
 }
 
+pub fn is_html(path: &Path) -> bool {
+    path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| {
+        ext.eq_ignore_ascii_case("html") || ext.eq_ignore_ascii_case("htm")
+    })
+}
+
 fn has_hidden_component(path: &Path) -> bool {
     path.components().any(|component| match component {
         Component::Normal(part) => part.to_string_lossy().starts_with('.'),
@@ -111,11 +171,17 @@ pub fn resolve_external_asset(root: &Path, requested: &Path, home: &Path) -> Res
     if !real.is_file()
         || has_hidden_component(relative)
         || (is_shallow_root(&root, home) && relative.components().count() != 1)
-        || !is_image(&real) && !is_markdown(&real)
+        || !is_image(&real) && !is_markdown(&real) && !is_web_asset(&real)
     {
         return Err(403);
     }
     Ok(real)
+}
+
+fn is_web_asset(path: &Path) -> bool {
+    path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| matches!(
+        ext.to_ascii_lowercase().as_str(), "html" | "htm" | "css" | "js" | "mjs" | "json" | "svg" | "woff" | "woff2" | "ttf" | "otf"
+    ))
 }
 
 fn is_image(path: &Path) -> bool {
@@ -274,15 +340,40 @@ mod tests {
     }
 
     #[test]
-    fn external_assets_allow_nested_images_and_markdown_only() {
+    fn external_html_commands_require_registered_root_and_reject_symlink_escape() {
+        let dir = fixture();
+        let root = dir.join("html");
+        std::fs::create_dir_all(&root).unwrap();
+        let html = root.join("page.html");
+        let outside = dir.join("outside.html");
+        std::fs::write(&html, "page").unwrap();
+        std::fs::write(&outside, "outside").unwrap();
+        let roots = ExternalFileRoots::default();
+        assert!(registered_html_path(html.to_str().unwrap(), "external-one", &roots).is_err());
+        roots.register("external-one", html.to_str().unwrap()).unwrap();
+        assert!(registered_html_path(html.to_str().unwrap(), "external-one", &roots).is_ok());
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&outside, root.join("escape.html")).unwrap();
+            assert!(registered_html_path(root.join("escape.html").to_str().unwrap(), "external-one", &roots).is_err());
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn external_assets_allow_nested_html_web_assets_images_and_markdown() {
         let dir = fixture();
         let root = dir.join("Outside");
         std::fs::create_dir_all(root.join("img")).unwrap();
         std::fs::write(root.join("doc.md"), "doc").unwrap();
         std::fs::write(root.join("img/pic.png"), "png").unwrap();
+        std::fs::write(root.join("index.html"), "page").unwrap();
+        std::fs::write(root.join("style.css"), "body{}").unwrap();
         std::fs::write(root.join("secret.txt"), "no").unwrap();
         assert!(resolve_external_asset(&root, &root.join("img/pic.png"), &dir).is_ok());
         assert!(resolve_external_asset(&root, &root.join("doc.md"), &dir).is_ok());
+        assert!(resolve_external_asset(&root, &root.join("index.html"), &dir).is_ok());
+        assert!(resolve_external_asset(&root, &root.join("style.css"), &dir).is_ok());
         assert_eq!(
             resolve_external_asset(&root, &root.join("secret.txt"), &dir),
             Err(403)

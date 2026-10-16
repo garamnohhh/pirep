@@ -149,19 +149,22 @@ fn serve_external(root: Option<PathBuf>, url_path: &str, home: &Path) -> Respons
     };
     match resolve_external_asset(&root, &decode_path(url_path), home) {
         Ok(path) => match std::fs::read(&path) {
-            Ok(bytes) => {
+            Ok(mut bytes) => {
                 let content_type = if is_markdown(&path) {
                     "text/markdown; charset=utf-8"
                 } else {
                     mime_for(&path)
                 };
-                Response::builder()
+                let mut response = Response::builder()
                     .status(200)
                     .header("Content-Type", content_type)
                     .header("Access-Control-Allow-Origin", "*")
-                    .header("Cache-Control", "no-store")
-                    .body(bytes)
-                    .unwrap()
+                    .header("Cache-Control", "no-store");
+                if content_type.starts_with("text/html") {
+                    response = response.header("Content-Security-Policy", HTML_CSP);
+                    bytes = inject_key_bridge(bytes);
+                }
+                response.body(bytes).unwrap()
             }
             Err(_) => Response::builder().status(404).body(Vec::new()).unwrap(),
         },
@@ -264,13 +267,15 @@ mod tests {
     }
 
     #[test]
-    fn external_requests_serve_only_markdown_and_image_assets() {
+    fn external_html_can_load_scoped_web_assets() {
         let dir = std::env::temp_dir().join(format!("pirep-external-assets-{}", std::process::id()));
-        let root = dir.join("Outside");
+        let root = dir.join("Outside Folder");
         std::fs::create_dir_all(root.join("img")).unwrap();
         std::fs::write(root.join("doc.md"), "hello").unwrap();
         std::fs::write(root.join("img/pic.png"), b"png").unwrap();
         std::fs::write(root.join("run.js"), "no").unwrap();
+        std::fs::write(root.join("index.html"), "<html><body>page</body></html>").unwrap();
+        std::fs::write(root.join("secret.txt"), "private").unwrap();
 
         let image = serve_external(Some(root.clone()), root.join("img/pic.png").to_str().unwrap(), &dir);
         assert_eq!(image.status(), 200);
@@ -279,7 +284,14 @@ mod tests {
         assert_eq!(markdown.status(), 200);
         assert_eq!(markdown.headers()["Content-Type"], "text/markdown; charset=utf-8");
         let script = serve_external(Some(root.clone()), root.join("run.js").to_str().unwrap(), &dir);
-        assert_eq!(script.status(), 403);
+        assert_eq!(script.status(), 200);
+        let html_url_path = format!("{}/index.html", root.to_string_lossy().replace(' ', "%20"));
+        assert_eq!(decode_path(&html_url_path), root.join("index.html"));
+        let html = serve_external(Some(root.clone()), &html_url_path, &dir);
+        assert_eq!(html.status(), 200);
+        assert!(html.headers().contains_key("Content-Security-Policy"));
+        assert!(html.body().windows(b"pirep-preview-refresh-state".len()).any(|part| part == b"pirep-preview-refresh-state"));
+        assert_eq!(serve_external(Some(root.clone()), root.join("secret.txt").to_str().unwrap(), &dir).status(), 403);
         assert_eq!(serve_external(None, "/tmp/file.png", &dir).status(), 403);
         std::fs::remove_dir_all(&dir).ok();
     }

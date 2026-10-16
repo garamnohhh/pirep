@@ -378,6 +378,8 @@ export function FileViewer() {
   const previewFrame = useRef<HTMLIFrameElement>(null);
   const [previewLocation, setPreviewLocation] = useState<{ src: string; href: string } | null>(null);
   const [previewReset, setPreviewReset] = useState(0);
+  const [previewUpdated, setPreviewUpdated] = useState(false);
+  const updatedTimer = useRef<number | null>(null);
   const [fileChangedOnDisk, setFileChangedOnDisk] = useState(false);
   const deferredPreview = useRef(false);
 
@@ -403,6 +405,12 @@ export function FileViewer() {
   const isPdf = fileExt === "pdf";
   const isHtml = fileExt === "html" || fileExt === "htm";
 
+  const showUpdatedFromDisk = useCallback(() => {
+    setPreviewUpdated(true);
+    if (updatedTimer.current) window.clearTimeout(updatedTimer.current);
+    updatedTimer.current = window.setTimeout(() => setPreviewUpdated(false), 2400);
+  }, []);
+
   useEffect(() => {
     if (!isHtml || externalFilePath) return;
     const changed = (paths: string[]) => {
@@ -414,12 +422,12 @@ export function FileViewer() {
           if (b64ToUtf8(data) !== draft.current) setFileChangedOnDisk(true);
         }).catch(() => setFileChangedOnDisk(true));
       } else if (showSlides) deferredPreview.current = true;
-      else setPreviewReset((n) => n + 1);
+      else { setPreviewReset((n) => n + 1); showUpdatedFromDisk(); }
     };
     const a = listen<string[]>("vault-changed", (event) => changed(event.payload));
     const b = listen<string[]>("files-changed", (event) => changed(event.payload));
     return () => { void a.then((stop) => stop()); void b.then((stop) => stop()); };
-  }, [relPath, isHtml, externalFilePath, fileEditMode, showSlides]);
+  }, [relPath, isHtml, externalFilePath, fileEditMode, showSlides, showUpdatedFromDisk]);
 
   const htmlSrc = isHtml && vaultRoot ? assetFileHref(vaultRoot, relPath) : undefined;
   const onPreviewLocation = useCallback((href: string) => {
@@ -457,6 +465,9 @@ export function FileViewer() {
   }, [relPath, externalFilePath]);
 
   if (externalFilePath) {
+    if (/\.(html|htm)$/i.test(externalFilePath)) {
+      return <ExternalHtmlFile path={externalFilePath} fileEditMode={fileEditMode} />;
+    }
     return <ExternalMarkdownFile path={externalFilePath} fileEditMode={fileEditMode} />;
   }
 
@@ -497,7 +508,7 @@ export function FileViewer() {
       name={name}
       onClose={() => {
         setShowSlides(false);
-        if (deferredPreview.current) { deferredPreview.current = false; setPreviewReset((n) => n + 1); }
+        if (deferredPreview.current) { deferredPreview.current = false; setPreviewReset((n) => n + 1); showUpdatedFromDisk(); }
       }}
     />
   );
@@ -535,6 +546,7 @@ export function FileViewer() {
           <div className="relative flex min-h-0 flex-1">
             <RenderView text={text} fileExt={fileExt} name={name} htmlSrc={htmlSrc}
               frame={previewFrame} onLocation={onPreviewLocation} reset={previewReset} />
+            {previewUpdated && <UpdatedFromDisk />}
           </div>
           {slideshow}
         </div>
@@ -604,6 +616,91 @@ export function FileViewer() {
   }
 
   return <OpaqueFile relPath={relPath} name={name} />;
+}
+
+function UpdatedFromDisk() {
+  return <div role="status" aria-live="polite" className="absolute inset-x-0 top-0 z-10 text-center bg-[var(--color-ink)] px-3 py-1 text-xs text-[var(--color-paper)]">Updated from disk</div>;
+}
+
+function ExternalHtmlFile({ path, fileEditMode }: { path: string; fileEditMode: boolean }) {
+  const name = path.split("/").pop() ?? path;
+  const parent = path.slice(0, path.lastIndexOf("/")) || "/";
+  const src = assetFileHref(parent, name);
+  const frame = useRef<HTMLIFrameElement>(null);
+  const draft = useRef("");
+  const timer = useRef<number | null>(null);
+  const noticeTimer = useRef<number | null>(null);
+  const [source, setSource] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [changed, setChanged] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [updated, setUpdated] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    let stop: (() => void) | undefined;
+    setReady(false);
+    const load = async () => {
+      await api.registerExternalFileRoot(path);
+      await api.watchExternalHtml(path);
+      const text = await api.readExternalHtml(path);
+      if (!cancelled) { draft.current = text; setSource(text); setReady(true); }
+    };
+    void load().catch((reason) => { if (!cancelled) setError(String(reason)); });
+    void listen<string[]>("external-html-changed", (event) => {
+      const changedPaths = event.payload;
+      if (!htmlAffectedByChanges(name, changedPaths)) return;
+      if (fileEditMode) {
+        if (!changedPaths.includes(name)) return;
+        if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
+        void api.readExternalHtml(path).then((text) => {
+          if (text !== draft.current) setChanged(true);
+        }).catch(() => setChanged(true));
+      } else {
+        setReload((value) => value + 1);
+        setUpdated(true);
+        if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
+        noticeTimer.current = window.setTimeout(() => setUpdated(false), 2400);
+      }
+    }).then((unlisten) => { stop = unlisten; if (cancelled) unlisten(); });
+    return () => {
+      cancelled = true;
+      stop?.();
+      if (timer.current) {
+        window.clearTimeout(timer.current);
+        void api.writeExternalHtml(path, draft.current).catch((reason) => console.error("Could not save external HTML:", reason));
+      }
+      if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
+    };
+  }, [path, fileEditMode, name]);
+
+  function onChange(value: string) {
+    draft.current = value;
+    setSource(value);
+    setChanged(false);
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
+      void api.writeExternalHtml(path, draft.current).catch((reason) => setError(String(reason)));
+    }, SAVE_DELAY);
+  }
+
+  if (error) return <div className="p-8 text-sm text-muted">{error}</div>;
+  return (
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      {fileEditMode && changed && (
+        <div className="absolute inset-x-0 top-0 z-10 flex justify-center gap-2 bg-[var(--color-ink)] px-3 py-1 text-xs text-[var(--color-paper)]">
+          <span>This file changed on disk.</span>
+          <button className="underline" onClick={() => { void api.readExternalHtml(path).then((text) => { draft.current = text; setSource(text); setChanged(false); }); }}>Reload</button>
+        </div>
+      )}
+      {!fileEditMode && updated && <UpdatedFromDisk />}
+      {!ready ? <div className="p-8 text-sm text-muted">Loading…</div> : fileEditMode ? <FileEditorHost key={path} filename={name} text={source} onChange={onChange} /> : (
+        <HtmlPreview src={src} name={name} frame={frame} onLocation={() => {}} reloadToken={reload} />
+      )}
+    </div>
+  );
 }
 
 function ExternalMarkdownFile({ path, fileEditMode }: { path: string; fileEditMode: boolean }) {

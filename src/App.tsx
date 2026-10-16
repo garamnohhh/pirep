@@ -144,7 +144,7 @@ function App() {
 
     const openPath = async (path: string) => {
       if (disposed) return;
-      if (!/\.(md|markdown)$/i.test(path)) return;
+      if (!/\.(md|markdown|html|htm)$/i.test(path)) return;
       const state = useStore.getState();
       const route = routeFileOpen(path, state.vaultRoot, state.vaults);
       if (route.kind === "external") {

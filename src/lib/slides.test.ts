@@ -16,6 +16,7 @@ equal(assetBaseHref("/Users/g/My Base/docs"), "pirepfile://localhost/Users/g/My%
 equal(assetBaseHref("/v/한글 폴더"), "pirepfile://localhost/v/%ED%95%9C%EA%B8%80%20%ED%8F%B4%EB%8D%94/");
 equal(assetBaseHref("/"), "pirepfile://localhost/");
 equal(assetFileHref("/Users/g/My Base", "docs/report.html"), "pirepfile://localhost/Users/g/My%20Base/docs/report.html");
+equal(assetFileHref("/Users/g/Outside Folder", "page.html"), "pirepfile://localhost/Users/g/Outside%20Folder/page.html");
 equal(localImageUrl("images/간트.png", "/vault", "plans/plan.md"), "pirepfile://localhost/vault/plans/images/%EA%B0%84%ED%8A%B8.png");
 equal(externalImageUrl("img/pic.png", "/Users/test/Outside/doc.md"), "pirepfile://localhost/Users/test/Outside/img/pic.png");
 equal(externalImageUrl("../secret.png", "/Users/test/Outside/doc.md"), null);

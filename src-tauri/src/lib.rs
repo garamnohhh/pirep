@@ -40,10 +40,12 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(VaultState::default())
         .manage(external_files::ExternalFileRoots::default())
+        .manage(external_files::ExternalHtmlWatchers::default())
         .manage(PendingOpenFiles::default())
         .on_window_event(|window, event| {
             if matches!(event, tauri::WindowEvent::Destroyed) {
                 window.app_handle().state::<external_files::ExternalFileRoots>().remove(window.label());
+                window.app_handle().state::<external_files::ExternalHtmlWatchers>().remove(window.label());
             }
             #[cfg(target_os = "macos")]
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
@@ -126,7 +128,10 @@ pub fn run() {
             commands::delete_raw_file,
             commands::read_external_markdown,
             commands::write_external_markdown,
+            commands::read_external_html,
+            commands::write_external_html,
             external_files::register_external_file_root,
+            external_files::watch_external_html,
             external_files::resolve_external_markdown_link,
             default_app::get_markdown_default_app,
             default_app::set_markdown_default_app,
@@ -142,6 +147,7 @@ pub fn run() {
                     .filter(|path| {
                         path.rsplit_once('.').is_some_and(|(_, ext)| {
                             ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown")
+                                || ext.eq_ignore_ascii_case("html") || ext.eq_ignore_ascii_case("htm")
                         })
                     });
                 for path in paths {
