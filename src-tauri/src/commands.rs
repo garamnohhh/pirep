@@ -187,8 +187,8 @@ fn delete_raw_file_at(root: &Path, rel_path: &str) -> Result<(), String> {
 }
 
 /// Split watcher paths into "needs a full markdown rescan" vs "only the non-md
-/// file listing changed". Skips .pirep, hidden dirs, .DS_Store and volatile
-/// sidecars (sqlite WAL, logs, temp) whose churn used to cause rescan storms.
+/// file listing changed". Extensionless dirs and removed paths can hide changed
+/// markdown descendants. Skips .pirep, hidden dirs, .DS_Store and volatile sidecars.
 fn classify_paths(paths: &[PathBuf], root: &Path, pirep: &std::path::Path) -> (bool, bool, Vec<String>) {
     const VOLATILE: &[&str] = &[
         "db", "db-shm", "db-wal", "sqlite", "sqlite3", "log", "tmp", "temp", "swp", "lock",
@@ -213,7 +213,7 @@ fn classify_paths(paths: &[PathBuf], root: &Path, pirep: &std::path::Path) -> (b
         if let Ok(path) = p.strip_prefix(root) {
             if let Some(path) = path.to_str() { relative.insert(path.replace('\\', "/")); }
         }
-        if ext == "md" {
+        if ext == "md" || (ext.is_empty() && (p.is_dir() || !p.exists())) {
             md = true;
         } else {
             other = true;
@@ -572,6 +572,21 @@ mod tests {
     }
 
     #[test]
+    fn extensionless_directories_and_missing_paths_request_markdown_rescan() {
+        let root = std::env::temp_dir().join(format!("pirep-classify-{}-{}", std::process::id(), now_ms()));
+        let folder = root.join("folder");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(root.join("README"), "plain file").unwrap();
+        let pirep = root.join(".pirep");
+
+        assert!(classify_paths(&[folder], &root, &pirep).0);
+        assert_eq!(classify_paths(&[root.join("README")], &root, &pirep), (false, true, vec!["README".into()]));
+        assert!(classify_paths(&[root.join("removed-folder")], &root, &pirep).0);
+
+        std::fs::remove_dir_all(root).ok();
+    }
+
+    #[test]
     fn real_watcher_reports_html_after_overwrite_and_atomic_rename() {
         use std::sync::mpsc;
         use std::time::{Duration, Instant};
@@ -613,6 +628,84 @@ mod tests {
         }
         drop(watcher);
         std::fs::remove_dir_all(root).ok();
+    }
+
+    #[test]
+    fn real_watcher_folder_moves_trigger_markdown_rescan() {
+        use std::sync::mpsc;
+        use std::time::{Duration, Instant};
+
+        fn check(
+            name: &str,
+            expected_paths: &[&str],
+            move_folder: impl FnOnce(&Path, &Path),
+        ) -> Option<String> {
+            let parent = std::env::temp_dir().join(format!(
+                "pirep-folder-watch-{name}-{}-{}",
+                std::process::id(),
+                now_ms()
+            ));
+            let root = parent.join("base");
+            std::fs::create_dir_all(root.join("source")).unwrap();
+            std::fs::write(root.join("source/note.md"), "note").unwrap();
+            std::fs::create_dir_all(root.join("destination")).unwrap();
+            let root = root.canonicalize().unwrap();
+            std::thread::sleep(Duration::from_millis(1100));
+
+            let (tx, rx) = mpsc::channel();
+            let watch_root = root.clone();
+            let pirep = root.join(".pirep");
+            let mut watcher = notify::PollWatcher::new(
+                move |event: notify::Result<Event>| {
+                    if let Ok(event) = event {
+                        let (md, _, paths) = classify_paths(&event.paths, &watch_root, &pirep);
+                        let _ = tx.send((md, paths));
+                    }
+                },
+                notify::Config::default().with_poll_interval(Duration::from_millis(50)),
+            )
+            .unwrap();
+            watcher.watch(&root, RecursiveMode::Recursive).unwrap();
+            std::thread::sleep(Duration::from_millis(250));
+
+            move_folder(&root, &parent);
+
+            let deadline = Instant::now() + Duration::from_secs(3);
+            let mut observed = Vec::new();
+            let result = loop {
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                if remaining.is_zero() { break None; }
+                match rx.recv_timeout(remaining.min(Duration::from_millis(100))) {
+                    Ok((md, paths)) => {
+                        observed.extend(paths.iter().cloned());
+                        if paths.iter().any(|path| expected_paths.iter().any(|expected| {
+                            path == expected || path.starts_with(&format!("{expected}/"))
+                        })) {
+                            break Some((md, paths));
+                        }
+                    }
+                    Err(mpsc::RecvTimeoutError::Timeout) => {}
+                    Err(mpsc::RecvTimeoutError::Disconnected) => break None,
+                }
+            };
+            let failure = match result {
+                Some((true, _)) => None,
+                Some((false, paths)) => Some(format!("{name}: md=false for {paths:?}")),
+                None => Some(format!("{name}: watcher did not report path; observed {observed:?}")),
+            };
+            drop(watcher);
+            std::fs::remove_dir_all(parent).ok();
+            failure
+        }
+
+        let failures = [check("move-out", &["source"], |root, parent| {
+            std::fs::rename(root.join("source"), parent.join("outside")).unwrap();
+        }), check("move-within", &["source", "destination/moved"], |root, _| {
+            std::fs::rename(root.join("source"), root.join("destination/moved")).unwrap();
+        }), check("rename", &["source", "renamed"], |root, _| {
+            std::fs::rename(root.join("source"), root.join("renamed")).unwrap();
+        })].into_iter().flatten().collect::<Vec<_>>();
+        assert!(failures.is_empty(), "folder watcher regressions: {failures:?}");
     }
 
     #[test]
