@@ -20,10 +20,7 @@ export function DocContextMenu({
   menu: CtxMenu | null;
   onClose: () => void;
 }) {
-  const applyDb = useStore((s) => s.applyDb);
   const applyRenamedDb = useStore((s) => s.applyRenamedDb);
-  const openId = useStore((s) => s.openDocId);
-  const goInbox = useStore((s) => s.goInbox);
   const vaultRoot = useStore((s) => s.vaultRoot);
 
   const [renaming, setRenaming] = useState(false);
@@ -67,17 +64,16 @@ export function DocContextMenu({
 
   async function handleDelete() {
     onClose();
-    const yes = await ask(`Delete "${docName(doc)}"?\nThis cannot be undone.`, {
-      title: "Delete file",
+    const yes = await ask(`Move "${docName(doc)}" to the Trash?`, {
+      title: "Move to Trash",
       kind: "warning",
     });
     if (!yes) return;
     try {
-      const db = await api.deleteDoc(doc.docId);
-      applyDb(db);
-      if (openId === doc.docId) goInbox();
+      await api.trashVaultItem(doc.path);
+      await useStore.getState().rescan();
     } catch (e) {
-      console.error("delete failed", e);
+      console.error("move to Trash failed", e);
     }
   }
 

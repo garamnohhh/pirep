@@ -106,6 +106,27 @@ fn vault_file(root: &Path, rel_path: &str) -> Result<PathBuf, String> {
     Ok(path)
 }
 
+fn vault_item(root: &Path, rel_path: &str) -> Result<PathBuf, String> {
+    let root = root.canonicalize().map_err(|e| e.to_string())?;
+    let relative = relative_path(rel_path)?;
+    if relative.components().any(|c| {
+        c.as_os_str()
+            .to_str()
+            .is_some_and(|name| name.eq_ignore_ascii_case(".pirep"))
+    }) {
+        return Err("invalid path".to_string());
+    }
+    let path = root.join(relative);
+    let canonical = path.canonicalize().map_err(|e| e.to_string())?;
+    if !canonical.starts_with(&root)
+        || canonical.starts_with(root.join(".pirep"))
+        || !(canonical.is_file() || canonical.is_dir())
+    {
+        return Err("invalid path".to_string());
+    }
+    Ok(path)
+}
+
 fn new_vault_file(root: &Path, rel_path: &str) -> Result<PathBuf, String> {
     let root = root.canonicalize().map_err(|e| e.to_string())?;
     let path = root.join(relative_path(rel_path)?);
@@ -182,8 +203,17 @@ fn rename_raw_file_at(root: &Path, rel_path: &str, new_name: &str) -> Result<(),
     crate::vault::pins::rename(root, rel_path, new_rel.to_str().ok_or("invalid path")?)
 }
 
-fn delete_raw_file_at(root: &Path, rel_path: &str) -> Result<(), String> {
-    std::fs::remove_file(vault_file(root, rel_path)?).map_err(|e| e.to_string())
+fn trash_vault_item_at(root: &Path, rel_path: &str) -> Result<(), String> {
+    let path = vault_item(root, rel_path)?;
+    #[cfg(target_os = "macos")]
+    {
+        use trash::macos::{DeleteMethod, TrashContextExtMacos};
+        let mut context = trash::TrashContext::new();
+        context.set_delete_method(DeleteMethod::NsFileManager);
+        context.delete(path).map_err(|e| e.to_string())
+    }
+    #[cfg(not(target_os = "macos"))]
+    trash::delete(path).map_err(|e| e.to_string())
 }
 
 /// Split watcher paths into "needs a full markdown rescan" vs "only the non-md
@@ -369,11 +399,6 @@ pub fn rename_doc(
 }
 
 #[tauri::command]
-pub fn delete_doc(doc_id: String, state: State<VaultState>) -> Result<Db, String> {
-    vault::delete_doc(&get_root(&state)?, &doc_id)
-}
-
-#[tauri::command]
 pub fn accept_change(doc_id: String, state: State<VaultState>) -> Result<Db, String> {
     vault::accept_change(&get_root(&state)?, &doc_id)
 }
@@ -469,8 +494,8 @@ pub fn rename_raw_file(rel_path: String, new_name: String, state: State<VaultSta
 }
 
 #[tauri::command]
-pub fn delete_raw_file(rel_path: String, state: State<VaultState>) -> Result<(), String> {
-    delete_raw_file_at(&get_root(&state)?, &rel_path)
+pub fn trash_vault_item(rel_path: String, state: State<VaultState>) -> Result<(), String> {
+    trash_vault_item_at(&get_root(&state)?, &rel_path)
 }
 
 #[tauri::command]
@@ -631,13 +656,14 @@ mod tests {
     }
 
     #[test]
-    fn real_watcher_folder_moves_trigger_markdown_rescan() {
+    fn real_watcher_folder_changes_trigger_markdown_rescan() {
         use std::sync::mpsc;
         use std::time::{Duration, Instant};
 
         fn check(
             name: &str,
             expected_paths: &[&str],
+            prepare: impl FnOnce(&Path),
             move_folder: impl FnOnce(&Path, &Path),
         ) -> Option<String> {
             let parent = std::env::temp_dir().join(format!(
@@ -646,23 +672,22 @@ mod tests {
                 now_ms()
             ));
             let root = parent.join("base");
-            std::fs::create_dir_all(root.join("source")).unwrap();
-            std::fs::write(root.join("source/note.md"), "note").unwrap();
+            std::fs::create_dir_all(&root).unwrap();
             std::fs::create_dir_all(root.join("destination")).unwrap();
+            prepare(&root);
             let root = root.canonicalize().unwrap();
             std::thread::sleep(Duration::from_millis(1100));
 
             let (tx, rx) = mpsc::channel();
             let watch_root = root.clone();
             let pirep = root.join(".pirep");
-            let mut watcher = notify::PollWatcher::new(
+            let mut watcher = notify::recommended_watcher(
                 move |event: notify::Result<Event>| {
                     if let Ok(event) = event {
                         let (md, _, paths) = classify_paths(&event.paths, &watch_root, &pirep);
                         let _ = tx.send((md, paths));
                     }
                 },
-                notify::Config::default().with_poll_interval(Duration::from_millis(50)),
             )
             .unwrap();
             watcher.watch(&root, RecursiveMode::Recursive).unwrap();
@@ -698,12 +723,27 @@ mod tests {
             failure
         }
 
-        let failures = [check("move-out", &["source"], |root, parent| {
+        let note = |root: &Path| {
+            std::fs::create_dir_all(root.join("source")).unwrap();
+            std::fs::write(root.join("source/note.md"), "note").unwrap();
+        };
+        let failures = [check("move-out", &["source"], note, |root, parent| {
             std::fs::rename(root.join("source"), parent.join("outside")).unwrap();
-        }), check("move-within", &["source", "destination/moved"], |root, _| {
+        }), check("remove", &["source"], note, |root, _| {
+            std::fs::remove_dir_all(root.join("source")).unwrap();
+        }), check("move-within", &["source", "destination/moved"], note, |root, _| {
             std::fs::rename(root.join("source"), root.join("destination/moved")).unwrap();
-        }), check("rename", &["source", "renamed"], |root, _| {
+        }), check("rename", &["source", "renamed"], note, |root, _| {
             std::fs::rename(root.join("source"), root.join("renamed")).unwrap();
+        }), check("nested-remove", &["source"], |root| {
+            std::fs::create_dir_all(root.join("source/deep/only")).unwrap();
+            std::fs::write(root.join("source/deep/only/note.md"), "note").unwrap();
+        }, |root, _| {
+            std::fs::remove_dir_all(root.join("source")).unwrap();
+        }), check("empty-remove", &["source"], |root| {
+            std::fs::create_dir_all(root.join("source")).unwrap();
+        }, |root, _| {
+            std::fs::remove_dir_all(root.join("source")).unwrap();
         })].into_iter().flatten().collect::<Vec<_>>();
         assert!(failures.is_empty(), "folder watcher regressions: {failures:?}");
     }
@@ -728,6 +768,34 @@ mod tests {
             std::os::unix::fs::symlink(&base, root.join("escape")).unwrap();
             assert!(vault_file(&root, "escape/outside.html").is_err());
             assert!(new_vault_file(&root, "escape/new.md").is_err());
+        }
+
+        std::fs::remove_dir_all(base).unwrap();
+    }
+
+    #[test]
+    fn vault_item_accepts_files_and_dirs_but_rejects_protected_paths() {
+        let base = std::env::temp_dir().join(format!("pirep-trash-path-{}", std::process::id()));
+        let root = base.join("vault");
+        std::fs::create_dir_all(root.join("folder")).unwrap();
+        std::fs::create_dir_all(root.join(".pirep")).unwrap();
+        std::fs::write(root.join("file.txt"), "ok").unwrap();
+        std::fs::write(root.join(".pirep/db.json"), "protected").unwrap();
+        std::fs::write(base.join("outside.txt"), "outside").unwrap();
+
+        assert!(vault_item(&root, "file.txt").unwrap().is_file());
+        assert!(vault_item(&root, "folder").unwrap().is_dir());
+        for path in ["", ".pirep", ".pirep/db.json", "../outside.txt"] {
+            assert!(vault_item(&root, path).is_err(), "{path}");
+        }
+        assert!(vault_item(&root, base.join("outside.txt").to_str().unwrap()).is_err());
+
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&base, root.join("escape")).unwrap();
+            std::os::unix::fs::symlink(root.join(".pirep"), root.join("protected-link")).unwrap();
+            assert!(vault_item(&root, "escape/outside.txt").is_err());
+            assert!(vault_item(&root, "protected-link").is_err());
         }
 
         std::fs::remove_dir_all(base).unwrap();
@@ -783,10 +851,10 @@ mod tests {
     }
 
     #[test]
-    fn delete_raw_file_rejects_all_escape_forms() {
-        let (base, root, paths) = escape_fixture("delete-escape");
+    fn trash_vault_item_rejects_all_escape_forms() {
+        let (base, root, paths) = escape_fixture("trash-escape");
         for path in paths {
-            assert!(delete_raw_file_at(&root, &path).is_err(), "{path}");
+            assert!(trash_vault_item_at(&root, &path).is_err(), "{path}");
         }
         std::fs::remove_dir_all(base).unwrap();
     }

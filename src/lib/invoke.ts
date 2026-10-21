@@ -26,8 +26,6 @@ export const api = {
     invoke<Db>("create_folder", { relPath }),
   renameDoc: (docId: string, newRelPath: string) =>
     invoke<Db>("rename_doc", { docId, newRelPath }),
-  deleteDoc: (docId: string) =>
-    invoke<Db>("delete_doc", { docId }),
   acceptChange: (docId: string) =>
     invoke<Db>("accept_change", { docId }),
   decideVersion: (docId: string, version: number) =>
@@ -55,6 +53,6 @@ export const api = {
   takePendingOpenFiles: () => invoke<string[]>("take_pending_open_files"),
   renameRawFile: (relPath: string, newName: string) =>
     invoke<void>("rename_raw_file", { relPath, newName }),
-  deleteRawFile: (relPath: string) =>
-    invoke<void>("delete_raw_file", { relPath }),
+  trashVaultItem: (relPath: string) =>
+    invoke<void>("trash_vault_item", { relPath }),
 };

@@ -413,22 +413,6 @@ pub fn rename_doc(root: &Path, doc_id: &str, new_rel_path: &str) -> Result<Db, S
     Ok(db)
 }
 
-pub fn delete_doc(root: &Path, doc_id: &str) -> Result<Db, String> {
-    let mut db = db::load(root);
-    let existing = db.docs.get(doc_id).cloned()
-        .ok_or_else(|| format!("unknown doc: {doc_id}"))?;
-
-    std::fs::remove_file(root.join(&existing.path)).ok();
-
-    let pirep = db::pirep_dir(root);
-    std::fs::remove_dir_all(pirep.join("snapshots").join(db::storage_key(doc_id))).ok();
-    std::fs::remove_file(pirep.join("changes").join(format!("{}.json", db::storage_key(doc_id)))).ok();
-
-    db.docs.remove(doc_id);
-    db::save(root, &db)?;
-    Ok(db)
-}
-
 // Create an empty folder in the vault, then rescan. Rejects `..` traversal and
 // any path that would escape the vault root.
 pub fn create_folder(root: &Path, rel_path: &str) -> Result<Db, String> {

@@ -5,6 +5,7 @@ import { api } from "../lib/invoke";
 import { slugify } from "../lib/markdown";
 import { resolveWiki } from "../lib/wiki";
 import { remapRenameReferences, renamedDocId } from "../lib/rename";
+import { pruneTreeReferences } from "../lib/treeState";
 import type { Db, DocEntry } from "../lib/types";
 import type { FrontmatterKeyCount } from "../lib/invoke";
 
@@ -404,7 +405,22 @@ function _build() { return create<AppState>()(
       loadNonMdFiles: async () => {
         try {
           const [files, dirs, frontmatterKeys, pinnedFiles] = await Promise.all([api.listFiles(), api.listDirs(), api.listFrontmatterKeys(), api.listPinnedFiles()]);
-          set({ nonMdFiles: files, allDirs: dirs, frontmatterKeys, pinnedFiles });
+          set((s) => {
+            const { closeOpen, ...references } = pruneTreeReferences(
+              s,
+              Object.keys(s.db?.docs ?? {}),
+              files,
+              dirs,
+            );
+            return {
+              nonMdFiles: files,
+              allDirs: dirs,
+              frontmatterKeys,
+              pinnedFiles,
+              ...references,
+              ...(closeOpen ? { view: "inbox" as View, mode: "read" as Mode, fileEditMode: false } : {}),
+            };
+          });
         } catch { /* silent */ }
       },
 

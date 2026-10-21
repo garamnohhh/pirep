@@ -18,7 +18,7 @@ interface TreeNode {
   filePath?: string; // non-md file relative path
 }
 
-type FileCtxMenu = { x: number; y: number; relPath: string; name: string; kind: "file" | "folder" };
+type FileCtxMenu = { x: number; y: number; relPath: string; name: string; kind: "file" | "folder"; fileCount: number };
 
 function buildTree(docs: DocEntry[], files: string[], dirs: string[]): TreeNode {
   const root: TreeNode = { name: "", children: new Map() };
@@ -226,8 +226,8 @@ export function FileTree() {
     setCtxMenu({ x, y, doc });
   }, []);
 
-  const onFileCtx = useCallback((x: number, y: number, relPath: string, name: string, kind: "file" | "folder") => {
-    setFileCtxMenu({ x, y, relPath, name, kind });
+  const onFileCtx = useCallback((x: number, y: number, relPath: string, name: string, kind: "file" | "folder", fileCount = 0) => {
+    setFileCtxMenu({ x, y, relPath, name, kind, fileCount });
   }, []);
 
   return (
@@ -266,7 +266,7 @@ export function FileTree() {
 }
 
 type OnCtx = (x: number, y: number, doc: DocEntry) => void;
-type OnFileCtx = (x: number, y: number, relPath: string, name: string, kind: "file" | "folder") => void;
+type OnFileCtx = (x: number, y: number, relPath: string, name: string, kind: "file" | "folder", fileCount?: number) => void;
 
 function NodeChildren({
   node, depth, pathPrefix, onCtx, onFileCtx,
@@ -331,7 +331,7 @@ function FolderRow({
     <>
       <button
         onClick={() => toggleFolder(path)}
-        onContextMenu={(e) => { e.preventDefault(); onFileCtx(e.clientX, e.clientY, path, node.name, "folder"); }}
+        onContextMenu={(e) => { e.preventDefault(); onFileCtx(e.clientX, e.clientY, path, node.name, "folder", count); }}
         aria-expanded={open}
         className="hover:text-ink"
         style={{
@@ -461,7 +461,7 @@ function NonDocCtxMenu({
 
   if (!menu) return null;
 
-  const { relPath, name, kind } = menu;
+  const { relPath, name, kind, fileCount } = menu;
   const absPath = `${vaultRoot}/${relPath}`;
 
   async function handleReveal() {
@@ -476,9 +476,15 @@ function NonDocCtxMenu({
 
   async function handleDelete() {
     onClose();
-    const yes = await ask(`Delete "${name}"?\nThis cannot be undone.`, { title: "Delete file", kind: "warning" });
+    const target = kind === "folder"
+      ? `"${name}" and its ${fileCount} ${fileCount === 1 ? "file" : "files"}`
+      : `"${name}"`;
+    const yes = await ask(`Move ${target} to the Trash?`, { title: "Move to Trash", kind: "warning" });
     if (!yes) return;
-    try { await api.deleteRawFile(relPath); } catch { /* silent */ }
+    try {
+      await api.trashVaultItem(relPath);
+      await useStore.getState().rescan();
+    } catch { /* silent */ }
   }
 
   async function submitRename(value: string) {
@@ -572,18 +578,14 @@ function NonDocCtxMenu({
           >
             Copy Path
           </button>
-          {kind === "file" && (
-            <>
-              <div className="mx-[8px] border-t border-line" />
-              <button
-                onClick={() => void handleDelete()}
-                className="flex w-full items-center px-[13px] py-[8px] text-left text-[13px] hover:bg-tertiary"
-                style={{ color: "var(--color-red)" }}
-              >
-                Delete
-              </button>
-            </>
-          )}
+          <div className="mx-[8px] border-t border-line" />
+          <button
+            onClick={() => void handleDelete()}
+            className="flex w-full items-center px-[13px] py-[8px] text-left text-[13px] hover:bg-tertiary"
+            style={{ color: "var(--color-red)" }}
+          >
+            Delete
+          </button>
         </>
       )}
     </div>
