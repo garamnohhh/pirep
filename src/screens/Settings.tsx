@@ -284,6 +284,8 @@ function BaseTab() {
   const removeVault = useStore((s) => s.removeVault);
   const docs = useDocs();
   const nonMd = useStore((s) => s.nonMdFiles);
+  const keepUnderscoreFoldersAtBottom = useStore((s) => s.keepUnderscoreFoldersAtBottom);
+  const setKeepUnderscoreFoldersAtBottom = useStore((s) => s.setKeepUnderscoreFoldersAtBottom);
   const [error, setError] = useState<string | null>(null);
   const [markdownDefault, setMarkdownDefault] = useState<MarkdownDefaultApp | null>(null);
   const [markdownDefaultError, setMarkdownDefaultError] = useState(false);
@@ -407,6 +409,13 @@ function BaseTab() {
             Couldn't change it. Use Finder: ⌘I › Open with › Change All.
           </div>
         )}
+      </div>
+
+      <div style={{ marginTop: 28 }}>
+        <SectionLabel>File tree</SectionLabel>
+        <Row label="Keep _ folders at the bottom" last>
+          <Toggle on={keepUnderscoreFoldersAtBottom} onChange={setKeepUnderscoreFoldersAtBottom} />
+        </Row>
       </div>
 
       {host && (

@@ -113,6 +113,7 @@ interface AppState {
   acceptChangesOnClose: boolean;
   markReadOnDocClose: boolean;
   expandedFolders: string[];
+  keepUnderscoreFoldersAtBottom: boolean;
   sidebarWidth: number;
   tocWidth: number;
   showEmptySections: boolean;
@@ -180,6 +181,7 @@ interface AppState {
   openTag: (tag: string) => void;
   setFolderFilter: (path: string | null) => void;
   toggleFolder: (path: string) => void;
+  setKeepUnderscoreFoldersAtBottom: (v: boolean) => void;
   revealInTree: () => void;
   setSidebarWidth: (w: number) => void;
   setTocWidth: (w: number) => void;
@@ -222,6 +224,7 @@ function _build() { return create<AppState>()(
       acceptChangesOnClose: false,
       markReadOnDocClose: false,
       expandedFolders: [],
+      keepUnderscoreFoldersAtBottom: true,
       sidebarWidth: SIDEBAR_MAX,
       tocWidth: 269,
       showEmptySections: true,
@@ -347,6 +350,8 @@ function _build() { return create<AppState>()(
             ? s.expandedFolders.filter((p) => p !== path)
             : [...s.expandedFolders, path],
         })),
+      setKeepUnderscoreFoldersAtBottom: (keepUnderscoreFoldersAtBottom) =>
+        set({ keepUnderscoreFoldersAtBottom }),
 
       // "Show the open file in the tree" — the IntelliJ button. It only ever
       // runs on a click; nothing follows the open document on its own, because
@@ -575,6 +580,7 @@ function _build() { return create<AppState>()(
         acceptChangesOnClose: s.acceptChangesOnClose,
         markReadOnDocClose: s.markReadOnDocClose,
         expandedFolders: s.expandedFolders,
+        keepUnderscoreFoldersAtBottom: s.keepUnderscoreFoldersAtBottom,
         sidebarVisible: s.sidebarVisible,
         tocVisible: s.tocVisible,
         focusMode: s.focusMode,

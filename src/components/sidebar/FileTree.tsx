@@ -9,6 +9,7 @@ import type { CtxMenu } from "../ui/DocContextMenu";
 import type { DocEntry } from "../../lib/types";
 import { ExtChip, extTier, rawExt } from "../ui/ExtChip";
 import { openWithOtherApp } from "../../lib/handoff";
+import { sortTreeEntries } from "../../lib/treeSort";
 
 interface TreeNode {
   name: string;
@@ -274,13 +275,13 @@ function NodeChildren({
   const openFile = useStore((s) => s.openFile);
   const openId = useStore((s) => s.openDocId);
   const openFilePath = useStore((s) => s.openFilePath);
+  const keepUnderscoreFoldersAtBottom = useStore((s) => s.keepUnderscoreFoldersAtBottom);
 
-  const entries = [...node.children.values()].sort((a, b) => {
-    const af = (a.doc || a.filePath) ? 1 : 0;
-    const bf = (b.doc || b.filePath) ? 1 : 0;
-    if (af !== bf) return af - bf;
-    return a.name.localeCompare(b.name);
-  });
+  const entries = sortTreeEntries(
+    node.children.values(),
+    (entry) => !(entry.doc || entry.filePath),
+    keepUnderscoreFoldersAtBottom,
+  );
 
   return (
     <>
