@@ -297,6 +297,54 @@ mod tests {
     }
 
     #[test]
+    fn external_html_can_load_only_safe_shared_home_assets() {
+        let dir = std::env::temp_dir().join(format!("pirep-shared-assets-{}", std::process::id()));
+        let home = dir.join("home");
+        let root = home.join("documents/report");
+        let shared = home.join("garamnoh/design-system");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::create_dir_all(shared.join("tokens")).unwrap();
+        std::fs::create_dir_all(home.join(".ssh")).unwrap();
+        std::fs::create_dir_all(home.join("hidden/.config")).unwrap();
+        std::fs::create_dir_all(home.join("Library/Application Support")).unwrap();
+        std::fs::create_dir_all(dir.join("outside")).unwrap();
+
+        for file in ["styles.css", "font.woff2", "mark.svg", "run.js", "data.json", "page.html"] {
+            std::fs::write(shared.join(file), file).unwrap();
+        }
+        std::fs::write(shared.join("tokens/color.css"), "color").unwrap();
+        std::fs::write(home.join(".ssh/x.css"), "secret").unwrap();
+        std::fs::write(home.join(".env.css"), "secret").unwrap();
+        std::fs::write(home.join("hidden/.config/x.css"), "secret").unwrap();
+        std::fs::write(home.join("Library/Application Support/x.css"), "secret").unwrap();
+        std::fs::write(dir.join("outside/x.css"), "outside").unwrap();
+
+        for file in ["styles.css", "font.woff2", "mark.svg", "tokens/color.css"] {
+            assert_eq!(serve_external(Some(root.clone()), shared.join(file).to_str().unwrap(), &home).status(), 200, "{file}");
+        }
+        for file in ["run.js", "data.json", "page.html"] {
+            assert_eq!(serve_external(Some(root.clone()), shared.join(file).to_str().unwrap(), &home).status(), 403, "{file}");
+        }
+        for path in [
+            home.join(".ssh/x.css"),
+            home.join(".env.css"),
+            home.join("hidden/.config/x.css"),
+            home.join("Library/Application Support/x.css"),
+            dir.join("outside/x.css"),
+        ] {
+            assert_eq!(serve_external(Some(root.clone()), path.to_str().unwrap(), &home).status(), 403, "{}", path.display());
+        }
+
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(home.join("hidden/.config/x.css"), shared.join("linked.css")).unwrap();
+            assert_eq!(serve_external(Some(root), shared.join("linked.css").to_str().unwrap(), &home).status(), 403);
+        }
+
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
     fn adds_preview_csp_to_html_only() {
         let vault = std::env::temp_dir().join(format!(
             "pirep-assets-csp-{}",

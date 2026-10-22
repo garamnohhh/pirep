@@ -167,15 +167,39 @@ pub fn resolve_external_asset(root: &Path, requested: &Path, home: &Path) -> Res
         return Err(403);
     }
     let real = requested.canonicalize().map_err(|_| 404u16)?;
-    let relative = real.strip_prefix(&root).map_err(|_| 403u16)?;
-    if !real.is_file()
+    if !real.is_file() {
+        return Err(403);
+    }
+    if let Ok(relative) = real.strip_prefix(&root) {
+        if has_hidden_component(relative)
+            || (is_shallow_root(&root, home) && relative.components().count() != 1)
+            || !is_image(&real) && !is_markdown(&real) && !is_web_asset(&real)
+        {
+            return Err(403);
+        }
+        return Ok(real);
+    }
+    if requested.starts_with(&root) {
+        return Err(403);
+    }
+
+    let home = home.canonicalize().map_err(|_| 403u16)?;
+    let relative = real.strip_prefix(&home).map_err(|_| 403u16)?;
+    if relative.as_os_str().is_empty()
         || has_hidden_component(relative)
-        || (is_shallow_root(&root, home) && relative.components().count() != 1)
-        || !is_image(&real) && !is_markdown(&real) && !is_web_asset(&real)
+        || relative.starts_with("Library")
+        || !is_shared_asset(&real)
     {
         return Err(403);
     }
     Ok(real)
+}
+
+fn is_shared_asset(path: &Path) -> bool {
+    path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| matches!(
+        ext.to_ascii_lowercase().as_str(),
+        "css" | "woff" | "woff2" | "ttf" | "otf" | "png" | "jpg" | "jpeg" | "gif" | "webp" | "svg"
+    ))
 }
 
 fn is_web_asset(path: &Path) -> bool {
@@ -382,23 +406,20 @@ mod tests {
     }
 
     #[test]
-    fn external_assets_refuse_parent_absolute_dot_and_symlink_escape() {
+    fn external_assets_refuse_parent_dot_and_root_symlink_escape() {
         let dir = fixture();
         let root = dir.join("Outside");
         std::fs::create_dir_all(&root).unwrap();
         std::fs::write(root.join("ok.png"), "ok").unwrap();
-        std::fs::write(dir.join("secret.png"), "secret").unwrap();
+        std::fs::write(dir.join("shared.png"), "shared").unwrap();
         std::fs::write(root.join(".hidden.png"), "hidden").unwrap();
         #[cfg(unix)]
-        std::os::unix::fs::symlink(dir.join("secret.png"), root.join("link.png")).unwrap();
+        std::os::unix::fs::symlink(dir.join("shared.png"), root.join("link.png")).unwrap();
         assert_eq!(
-            resolve_external_asset(&root, &root.join("../secret.png"), &dir),
+            resolve_external_asset(&root, &root.join("../shared.png"), &dir),
             Err(403)
         );
-        assert_eq!(
-            resolve_external_asset(&root, &dir.join("secret.png"), &dir),
-            Err(403)
-        );
+        assert!(resolve_external_asset(&root, &dir.join("shared.png"), &dir).is_ok());
         assert_eq!(
             resolve_external_asset(&root, &root.join(".hidden.png"), &dir),
             Err(403)
