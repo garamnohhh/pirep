@@ -3,6 +3,10 @@ export type FileOpenRoute =
   | { kind: "base"; windowLabel: "main"; base: string; relativePath: string }
   | { kind: "external"; path: string; windowLabel: string };
 
+export function pirepLink(path: string): string {
+  return `pirep://${path.split("/").map(encodeURIComponent).join("/")}`;
+}
+
 export function offsetWindowPosition(
   origin: { x: number; y: number },
   workArea: { x: number; y: number; width: number; height: number },

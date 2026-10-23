@@ -34,6 +34,8 @@ No server, no account, no cloud. The files stay in your folder; pirep only reads
 | Quick Look | Press Space on a Markdown file in Finder to see it rendered |
 | Open from Finder | Markdown files open in their Base; files outside any Base open in their own window; relative images and links there resolve next to the file |
 
+Open a Markdown or HTML file with `pirep:///<absolute-path>`; percent-encode spaces and non-ASCII characters when needed.
+
 ![Word-level diff of a changed document](docs/screenshot-changes.png)
 
 ## Using it

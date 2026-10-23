@@ -1,4 +1,4 @@
-import { classifyFileBase, routeFileOpen, offsetWindowPosition } from "./open-file.ts";
+import { classifyFileBase, routeFileOpen, offsetWindowPosition, pirepLink } from "./open-file.ts";
 
 const bases = ["/Users/test/Base A", "/Users/test/Base B"];
 const cases = [
@@ -36,3 +36,8 @@ for (const [name, origin, workArea, size, expected] of positionCases) {
   }
 }
 console.log(`${positionCases.length} window-position tests passed`);
+
+const link = pirepLink("/Users/test/My Base/한 글?#.md");
+if (link !== "pirep:///Users/test/My%20Base/%ED%95%9C%20%EA%B8%80%3F%23.md") {
+  throw new Error(`pirep link encoding: ${link}`);
+}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { emitTo } from "@tauri-apps/api/event";
 import { useStore, useDocs } from "../../store";
 import { api } from "../../lib/invoke";
 import { fuzzyFilter } from "../../lib/fuzzy";
@@ -7,13 +8,24 @@ import { docName, unreadCount } from "../../lib/types";
 interface Item {
   id: string;
   label: string;
-  group: "Recent · with updates" | "Notes" | "Actions";
+  group: "Open" | "Recent · with updates" | "Notes" | "Actions";
   badge?: string;
   kbd?: string;
   icon: string;
   run: () => void;
 }
 
+function openPathCandidate(value: string): string | null {
+  const trimmed = value.trim();
+  const candidate = trimmed.length >= 2
+    && ((trimmed.startsWith("'") && trimmed.endsWith("'"))
+      || (trimmed.startsWith('"') && trimmed.endsWith('"')))
+    ? trimmed.slice(1, -1)
+    : trimmed;
+  return candidate.startsWith("pirep:///") || candidate.startsWith("/") || candidate.startsWith("~/")
+    ? candidate
+    : null;
+}
 
 export function CommandPalette() {
   const open = useStore((s) => s.cmdPaletteOpen);
@@ -23,6 +35,7 @@ export function CommandPalette() {
 
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
+  const [pathError, setPathError] = useState<string | null>(null);
 
   const items: Item[] = useMemo(() => {
     const close = () => setOpen(false);
@@ -112,10 +125,28 @@ export function CommandPalette() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docs, setOpen]);
 
-  const filtered = useMemo(
-    () => (q ? fuzzyFilter(q, items, (i) => i.label) : items),
-    [q, items],
-  );
+  const filtered = useMemo(() => {
+    const matches = q ? fuzzyFilter(q, items, (i) => i.label) : items;
+    const candidate = openPathCandidate(q);
+    if (!candidate) return matches;
+    const openItem: Item = {
+      id: "open:path",
+      label: `Open ${candidate}`,
+      group: "Open",
+      icon: "↗",
+      run: async () => {
+        try {
+          const path = await api.resolveOpenPath(q);
+          await emitTo("main", "open-file-request", path);
+          setPathError(null);
+          setOpen(false);
+        } catch (error) {
+          setPathError(String(error));
+        }
+      },
+    };
+    return [openItem, ...matches];
+  }, [q, items, setOpen]);
 
   const clamped = Math.min(active, Math.max(0, filtered.length - 1));
 
@@ -163,6 +194,7 @@ export function CommandPalette() {
             onChange={(e) => {
               setQ(e.target.value);
               setActive(0);
+              setPathError(null);
             }}
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") {
@@ -197,6 +229,14 @@ export function CommandPalette() {
 
         {/* Results */}
         <div style={{ padding: "8px 0", overflowY: "auto", flex: 1, minHeight: 0 }}>
+          {pathError && (
+            <div
+              role="status"
+              style={{ padding: "8px 16px", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--color-red)" }}
+            >
+              {pathError}
+            </div>
+          )}
           {filtered.length === 0 && (
             <div
               className="uppercase"

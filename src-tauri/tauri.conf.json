@@ -43,6 +43,7 @@
     ],
     "macOS": {
       "signingIdentity": "-",
+      "infoPlist": "Info.plist",
       "files": {
         "PlugIns/PirepPreview.appex": "target/quicklook-extension/PirepPreview.appex"
       }

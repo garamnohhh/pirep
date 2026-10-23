@@ -51,6 +51,7 @@ export const api = {
   writeExternalHtml: (path: string, content: string) =>
     invoke<void>("write_external_html", { path, content }),
   takePendingOpenFiles: () => invoke<string[]>("take_pending_open_files"),
+  resolveOpenPath: (input: string) => invoke<string>("resolve_open_path", { input }),
   renameRawFile: (relPath: string, newName: string) =>
     invoke<void>("rename_raw_file", { relPath, newName }),
   trashVaultItem: (relPath: string) =>

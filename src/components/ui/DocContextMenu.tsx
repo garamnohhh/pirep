@@ -6,6 +6,7 @@ import { docName } from "../../lib/types";
 import { api } from "../../lib/invoke";
 import type { DocEntry } from "../../lib/types";
 import { renameTargetPath } from "../../lib/rename";
+import { pirepLink } from "../../lib/open-file";
 
 export interface CtxMenu {
   x: number;
@@ -93,6 +94,12 @@ export function DocContextMenu({
     try { await navigator.clipboard.writeText(`${vaultRoot}/${doc.path}`); } catch { /* silent */ }
   }
 
+  async function handleCopyPirepLink() {
+    onClose();
+    if (!vaultRoot) return;
+    try { await navigator.clipboard.writeText(pirepLink(`${vaultRoot}/${doc.path}`)); } catch { /* silent */ }
+  }
+
   return (
     <div
       onMouseDown={(e) => e.stopPropagation()}
@@ -136,6 +143,12 @@ export function DocContextMenu({
             className="flex w-full items-center px-[13px] py-[8px] text-left text-[13px] text-ink hover:bg-tertiary"
           >
             Copy Path
+          </button>
+          <button
+            onClick={() => void handleCopyPirepLink()}
+            className="flex w-full items-center px-[13px] py-[8px] text-left text-[13px] text-ink hover:bg-tertiary"
+          >
+            Copy pirep link
           </button>
           <div className="mx-[8px] border-t border-line" />
           <button

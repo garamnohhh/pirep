@@ -10,6 +10,7 @@ import type { DocEntry } from "../../lib/types";
 import { ExtChip, extTier, rawExt } from "../ui/ExtChip";
 import { openWithOtherApp } from "../../lib/handoff";
 import { sortTreeEntries } from "../../lib/treeSort";
+import { pirepLink } from "../../lib/open-file";
 
 interface TreeNode {
   name: string;
@@ -474,6 +475,11 @@ function NonDocCtxMenu({
     try { await navigator.clipboard.writeText(absPath); } catch { /* silent */ }
   }
 
+  async function handleCopyPirepLink() {
+    onClose();
+    try { await navigator.clipboard.writeText(pirepLink(absPath)); } catch { /* silent */ }
+  }
+
   async function handleDelete() {
     onClose();
     const target = kind === "folder"
@@ -578,6 +584,14 @@ function NonDocCtxMenu({
           >
             Copy Path
           </button>
+          {kind === "file" && /\.(md|markdown|html|htm)$/i.test(relPath) && (
+            <button
+              onClick={() => void handleCopyPirepLink()}
+              className="flex w-full items-center px-[13px] py-[8px] text-left text-[13px] text-ink hover:bg-tertiary"
+            >
+              Copy pirep link
+            </button>
+          )}
           <div className="mx-[8px] border-t border-line" />
           <button
             onClick={() => void handleDelete()}

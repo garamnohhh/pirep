@@ -5,6 +5,7 @@ mod external_files;
 mod vault;
 
 use commands::VaultState;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
 
@@ -17,6 +18,103 @@ struct PendingOpenFilesState {
     frontend_ready: bool,
 }
 
+fn percent_decode(input: &str) -> Option<String> {
+    fn hex(byte: u8) -> Option<u8> {
+        match byte {
+            b'0'..=b'9' => Some(byte - b'0'),
+            b'a'..=b'f' => Some(byte - b'a' + 10),
+            b'A'..=b'F' => Some(byte - b'A' + 10),
+            _ => None,
+        }
+    }
+
+    let bytes = input.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            let high = hex(*bytes.get(index + 1)?)?;
+            let low = hex(*bytes.get(index + 2)?)?;
+            decoded.push(high * 16 + low);
+            index += 3;
+        } else {
+            decoded.push(bytes[index]);
+            index += 1;
+        }
+    }
+    String::from_utf8(decoded).ok()
+}
+
+fn parse_open_path(input: &str, home: &Path) -> Result<PathBuf, &'static str> {
+    let input = input.trim();
+    let input = if input.len() >= 2
+        && ((input.starts_with('\'') && input.ends_with('\''))
+            || (input.starts_with('"') && input.ends_with('"')))
+    {
+        &input[1..input.len() - 1]
+    } else {
+        input
+    };
+    if input.is_empty() || input.contains('?') || input.contains('#') {
+        return Err("Invalid path");
+    }
+
+    let path = if let Some(rest) = input.strip_prefix("pirep:///") {
+        let rest = percent_decode(rest).ok_or("Invalid path")?;
+        if rest.starts_with('/') || rest.split('/').any(|part| part == "." || part == "..") {
+            return Err("Invalid path");
+        }
+        Path::new("/").join(rest)
+    } else if input.starts_with("pirep://") {
+        return Err("Invalid path");
+    } else if let Some(rest) = input.strip_prefix("file:///") {
+        let rest = percent_decode(rest).ok_or("Invalid path")?;
+        if rest.starts_with('/') || rest.split('/').any(|part| part == "." || part == "..") {
+            return Err("Invalid path");
+        }
+        Path::new("/").join(rest)
+    } else if input.starts_with("file://") {
+        return Err("Invalid path");
+    } else if let Some(rest) = input.strip_prefix("~/") {
+        let rest = percent_decode(rest).ok_or("Invalid path")?;
+        if rest.split('/').any(|part| part == "." || part == "..") {
+            return Err("Invalid path");
+        }
+        home.join(rest)
+    } else {
+        let decoded = percent_decode(input).ok_or("Invalid path")?;
+        if decoded.starts_with("//")
+            || decoded.split('/').any(|part| part == "." || part == "..")
+        {
+            return Err("Invalid path");
+        }
+        PathBuf::from(decoded)
+    };
+    if !path.is_absolute() {
+        return Err("Invalid path");
+    }
+    let path = path.canonicalize().map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound { "File not found" } else { "Invalid path" }
+    })?;
+    let supported = path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| {
+        matches!(ext.to_ascii_lowercase().as_str(), "md" | "markdown" | "html" | "htm")
+    });
+    if !path.is_file() || !supported {
+        return Err("Invalid path");
+    }
+    Ok(path)
+}
+
+fn queue_open_path(state: &PendingOpenFiles, path: String) -> bool {
+    let mut pending = state.0.lock().expect("pending open files lock poisoned");
+    if pending.frontend_ready {
+        true
+    } else {
+        pending.files.push(path);
+        false
+    }
+}
+
 #[cfg(target_os = "macos")]
 fn should_hide_on_close(window_label: &str) -> bool {
     window_label == "main"
@@ -27,6 +125,13 @@ fn take_pending_open_files(state: tauri::State<'_, PendingOpenFiles>) -> Vec<Str
     let mut pending = state.0.lock().expect("pending open files lock poisoned");
     pending.frontend_ready = true;
     std::mem::take(&mut pending.files)
+}
+
+#[tauri::command]
+fn resolve_open_path(input: String) -> Result<String, String> {
+    parse_open_path(&input, &std::env::var_os("HOME").map(PathBuf::from).unwrap_or_default())
+        .map(|path| path.to_string_lossy().into_owned())
+        .map_err(str::to_string)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -135,29 +240,20 @@ pub fn run() {
             default_app::get_markdown_default_app,
             default_app::set_markdown_default_app,
             take_pending_open_files,
+            resolve_open_path,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Opened { urls } = &event {
-                let paths = urls.iter().filter_map(|url| url.to_file_path().ok())
-                    .map(|path| path.to_string_lossy().into_owned())
-                    .filter(|path| {
-                        path.rsplit_once('.').is_some_and(|(_, ext)| {
-                            ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown")
-                                || ext.eq_ignore_ascii_case("html") || ext.eq_ignore_ascii_case("htm")
-                        })
-                    });
+                let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_default();
+                let paths = urls.iter()
+                    .filter_map(|url| parse_open_path(url.as_str(), &home).ok())
+                    .map(|path| path.to_string_lossy().into_owned());
                 for path in paths {
                     let state = app.state::<PendingOpenFiles>();
-                    let ready = {
-                        let mut pending = state.0.lock().expect("pending open files lock poisoned");
-                        if pending.frontend_ready { true } else {
-                            pending.files.push(path.clone());
-                            false
-                        }
-                    };
+                    let ready = queue_open_path(&state, path.clone());
                     if ready { let _ = app.emit_to("main", "open-file-request", path); }
                 }
             }
@@ -183,5 +279,71 @@ mod close_policy_tests {
     #[test]
     fn external_windows_are_allowed_to_close() {
         assert!(!should_hide_on_close("external-123"));
+    }
+}
+
+#[cfg(test)]
+mod open_path_tests {
+    use super::{parse_open_path, queue_open_path, PendingOpenFiles};
+
+    #[test]
+    fn parses_supported_file_paths_and_rejects_invalid_inputs() {
+        let base = std::env::temp_dir().join(format!("pirep-open-path-{}", std::process::id()));
+        let home = base.join("home");
+        let folder = home.join("My Base");
+        std::fs::create_dir_all(&folder).unwrap();
+        let markdown = folder.join("한 글.md");
+        let long_markdown = folder.join("note.markdown");
+        let html = folder.join("page.html");
+        let htm = folder.join("old.htm");
+        let text = folder.join("notes.txt");
+        std::fs::write(&markdown, "note").unwrap();
+        std::fs::write(&long_markdown, "note").unwrap();
+        std::fs::write(&html, "page").unwrap();
+        std::fs::write(&htm, "page").unwrap();
+        std::fs::write(&text, "text").unwrap();
+        let home = home.canonicalize().unwrap();
+        let markdown = markdown.canonicalize().unwrap();
+
+        let encoded = format!("pirep://{}/My%20Base/%ED%95%9C%20%EA%B8%80.md", home.display());
+        let raw = format!("pirep://{}/My Base/한 글.md", home.display());
+        let file_url = format!("file://{}/My%20Base/%ED%95%9C%20%EA%B8%80.md", home.display());
+        for input in [encoded.as_str(), raw.as_str(), file_url.as_str(), markdown.to_str().unwrap()] {
+            assert_eq!(parse_open_path(input, &home), Ok(markdown.clone()), "{input}");
+        }
+        assert_eq!(parse_open_path("'~/My Base/한 글.md'", &home), Ok(markdown.clone()));
+        assert_eq!(parse_open_path("\"~/My Base/한 글.md\"", &home), Ok(markdown.clone()));
+        for path in [long_markdown, html, htm] {
+            let path = path.canonicalize().unwrap();
+            assert_eq!(parse_open_path(path.to_str().unwrap(), &home), Ok(path));
+        }
+
+        let invalid = [
+            format!("pirep://host{}/My%20Base/%ED%95%9C.md", home.display()),
+            format!("pirep://{}/My%20Base/page.html?print=1", home.display()),
+            format!("pirep://{}/My%20Base/../My%20Base/page.html", home.display()),
+            format!("pirep://{}/My%ZZBase/page.html", home.display()),
+            "relative.md".to_string(),
+            text.to_string_lossy().into_owned(),
+        ];
+        for input in invalid {
+            assert_eq!(parse_open_path(&input, &home), Err("Invalid path"), "{input}");
+        }
+        assert_eq!(parse_open_path("~/My Base/missing.md", &home), Err("File not found"));
+
+        std::fs::remove_dir_all(base).unwrap();
+    }
+
+    #[test]
+    fn queues_open_paths_until_the_frontend_is_ready() {
+        let pending = PendingOpenFiles::default();
+        assert!(!queue_open_path(&pending, "/tmp/one.md".into()));
+        {
+            let mut state = pending.0.lock().unwrap();
+            assert_eq!(state.files, ["/tmp/one.md"]);
+            state.frontend_ready = true;
+        }
+        assert!(queue_open_path(&pending, "/tmp/two.md".into()));
+        assert_eq!(pending.0.lock().unwrap().files, ["/tmp/one.md"]);
     }
 }
