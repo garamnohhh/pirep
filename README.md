@@ -77,7 +77,7 @@ If macOS says the app is damaged, remove only its quarantine flag with `xattr -d
 
 - **Apple Silicon only** (M1 and later). It will not run on an Intel Mac.
 - Built on macOS 26, and still fine on 27.
-- The current release is `0.2.5`, published on 2026-10-21.
+- The current release is `0.2.6`, published on 2026-10-27.
 
 ## Building from source
 
@@ -94,7 +94,7 @@ pnpm tauri build   # produce the .app and .dmg
 - **Your documents**: exactly where they were. pirep never moves them out of your folder.
 - **Version history**: in a `.pirep/` folder inside your Base — one copy per version, plus the change log. Delete that folder and the history goes with it.
 - **App settings**: in the app's own storage under `~/Library/WebKit/com.garamnoh.pirep`.
-- **What leaves your machine**: no document content, ever. The app has no telemetry and no sync. The only outbound request it can make is looking up the latest GitHub release, and only if you press *Check for updates* in Settings — that check is not finished yet and currently fails.
+- **What leaves your machine**: no document content, ever. The app has no telemetry and no sync. Its only outbound request is reading the latest GitHub release (`latest.json`), once at launch and when you press *Check for updates* in Settings.
 - **Website**: The website makes no third-party requests. The one exception is Cloudflare Web Analytics, run by the host itself: no cookies, and Cloudflare already sees the IP.
 
 To remove pirep, move the app to the Trash and, if you want, delete the `.pirep/` folder in your Base and the settings folder above.
