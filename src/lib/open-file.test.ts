@@ -1,8 +1,9 @@
-import { classifyFileBase, routeFileOpen, offsetWindowPosition, pirepLink } from "./open-file.ts";
+import { classifyFileBase, findDocId, routeFileOpen, offsetWindowPosition, pirepLink } from "./open-file.ts";
 
 const bases = ["/Users/test/Base A", "/Users/test/Base B"];
 const cases = [
   ["current Base", classifyFileBase("/Users/test/Base A/Notes/a.md", bases[0], bases), "current"],
+  ["NFD current Base", classifyFileBase("/Users/test/한글 Base/최종.md".normalize("NFD"), "/Users/test/한글 Base".normalize("NFD"), ["/Users/test/한글 Base"]), "current"],
   ["other Base", classifyFileBase("/Users/test/Base B/a.markdown", bases[0], bases), "other"],
   ["outside Base", classifyFileBase("/Users/test/outside.md", bases[0], bases), "outside"],
   ["prefix is not containment", classifyFileBase("/Users/test/Base A copy/a.md", bases[0], bases), "outside"],
@@ -16,6 +17,7 @@ console.log(`${cases.length} open-file classification tests passed`);
 const routes = [
   ["current Base reuses the Base window", routeFileOpen("/Users/test/Base A/a.md", bases[0], bases), { kind: "base", windowLabel: "main", base: bases[0], relativePath: "a.md" }],
   ["registered Base reuses the Base window", routeFileOpen("/Users/test/Base B/folder/a.md", bases[0], bases), { kind: "base", windowLabel: "main", base: bases[1], relativePath: "folder/a.md" }],
+  ["NFD path routes to NFC Base without changing the disk path", routeFileOpen("/Users/test/한글 Base/최종.md".normalize("NFD"), "/Users/test/한글 Base", ["/Users/test/한글 Base"]), { kind: "base", windowLabel: "main", base: "/Users/test/한글 Base", relativePath: "최종.md".normalize("NFD") }],
   ["external file gets dedicated window", routeFileOpen("/Users/test/outside.md", bases[0], bases).windowLabel.startsWith("external-"), true],
   ["same external path deduplicates", routeFileOpen("/Users/test/outside.md", bases[0], bases).windowLabel, routeFileOpen("/Users/test/./outside.md", bases[0], bases).windowLabel],
 ] as const;
@@ -23,6 +25,11 @@ for (const [name, actual, expected] of routes) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`${name}: ${JSON.stringify(actual)} !== ${JSON.stringify(expected)}`);
 }
 console.log(`${routes.length} file-open routing tests passed`);
+
+const nfcDocId = "최종.md";
+const nfdDocId = nfcDocId.normalize("NFD");
+if (findDocId(nfdDocId, { [nfcDocId]: {} }) !== nfcDocId) throw new Error("NFD path did not match NFC document id");
+if (findDocId(nfcDocId, { [nfdDocId]: {} }) !== nfdDocId) throw new Error("NFC path did not match NFD document id");
 
 const positionCases = [
   ["offsets within monitor", { x: 100, y: 10 }, { x: 0, y: 0, width: 1440, height: 900 }, { width: 1120, height: 820 }, { x: 136, y: 46 }],

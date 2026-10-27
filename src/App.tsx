@@ -10,7 +10,7 @@ import { Onboarding } from "./screens/Onboarding";
 import { MainApp } from "./screens/MainApp";
 import { CommandPalette } from "./components/ui/CommandPalette";
 import { FindBar } from "./components/ui/FindBar";
-import { offsetWindowPosition, routeFileOpen } from "./lib/open-file";
+import { findDocId, offsetWindowPosition, routeFileOpen } from "./lib/open-file";
 import { api } from "./lib/invoke";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { caught: boolean }> {
@@ -133,9 +133,9 @@ function App() {
       if (startupScan.current) await startupScan.current;
       const state = useStore.getState();
       if (state.vaultRoot !== base) await state.openVault(base);
-      const id = relativePath.toLowerCase();
       const current = useStore.getState();
-      if (current.db?.docs[id]) current.openDoc(id);
+      const id = current.db && findDocId(relativePath, current.db.docs);
+      if (id) current.openDoc(id);
       else current.openFile(relativePath);
       current.revealInTree();
       await currentWindow.show();
@@ -172,9 +172,9 @@ function App() {
         const folder = path.slice(0, path.lastIndexOf("/")) || "/";
         await useStore.getState().openVault(folder);
         const relativePath = path.startsWith(`${folder}/`) ? path.slice(folder.length + 1) : path.slice(1);
-        const id = relativePath.toLowerCase();
         const state = useStore.getState();
-        if (state.db?.docs[id]) state.openDoc(id);
+        const id = state.db && findDocId(relativePath, state.db.docs);
+        if (id) state.openDoc(id);
         else state.openFile(relativePath);
         state.revealInTree();
         await currentWindow.show();

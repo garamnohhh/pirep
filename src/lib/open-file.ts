@@ -30,16 +30,23 @@ function normalize(path: string): string {
 }
 
 export function classifyFileBase(path: string, current: string | null, bases: string[]): FileBaseMatch {
-  const target = normalize(path);
+  const target = normalize(path).normalize("NFC");
   const containing = bases
-    .map((base) => ({ base, normalized: normalize(base) }))
+    .map((base) => ({ base, normalized: normalize(base).normalize("NFC") }))
     .filter(({ normalized }) => target.startsWith(`${normalized.replace(/\/$/, "")}/`))
     .sort((a, b) => b.normalized.length - a.normalized.length)[0];
   if (!containing) return { kind: "outside" };
   return {
-    kind: current && normalize(current) === containing.normalized ? "current" : "other",
+    kind: current && normalize(current).normalize("NFC") === containing.normalized ? "current" : "other",
     base: containing.base,
   };
+}
+
+export function findDocId(path: string, docs: Record<string, unknown>): string | null {
+  for (const id of [path.normalize("NFC").toLowerCase(), path.normalize("NFD").toLowerCase()]) {
+    if (Object.prototype.hasOwnProperty.call(docs, id)) return id;
+  }
+  return null;
 }
 
 function externalWindowLabel(path: string): string {
@@ -57,8 +64,9 @@ export function routeFileOpen(path: string, current: string | null, bases: strin
   const normalizedPath = normalize(path);
   const match = classifyFileBase(normalizedPath, current, bases);
   if (match.kind !== "outside") {
-    const base = normalize(match.base).replace(/\/$/, "");
-    return { kind: "base", windowLabel: "main", base: match.base, relativePath: normalizedPath.slice(base.length + 1) };
+    const baseDepth = normalize(match.base).split("/").filter(Boolean).length;
+    const relativePath = normalizedPath.split("/").filter(Boolean).slice(baseDepth).join("/");
+    return { kind: "base", windowLabel: "main", base: match.base, relativePath };
   }
   return { kind: "external", path: normalizedPath, windowLabel: externalWindowLabel(normalizedPath) };
 }
