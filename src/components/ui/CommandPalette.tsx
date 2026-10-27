@@ -1,18 +1,36 @@
 import { useMemo, useState } from "react";
 import { emitTo } from "@tauri-apps/api/event";
-import { useStore, useDocs } from "../../store";
+import { useStore, useDocs, useNonMdFiles } from "../../store";
 import { api } from "../../lib/invoke";
+import { searchFileCandidates } from "../../lib/commandSearch";
 import { fuzzyFilter } from "../../lib/fuzzy";
 import { docName, unreadCount } from "../../lib/types";
+import { extTier, rawExt } from "./ExtChip";
 
 interface Item {
   id: string;
   label: string;
-  group: "Open" | "Recent · with updates" | "Notes" | "Actions";
+  detail?: string;
+  group: "Open" | "Files" | "Recent · with updates" | "Notes" | "Actions";
   badge?: string;
   kbd?: string;
   icon: string;
   run: () => void;
+}
+
+interface SearchableItem {
+  name: string;
+  path: string;
+  item: Item;
+}
+
+function fileName(path: string): string {
+  return path.split("/").pop() ?? path;
+}
+
+function folderPath(path: string): string {
+  const slash = path.lastIndexOf("/");
+  return slash < 0 ? "/" : path.slice(0, slash);
 }
 
 function openPathCandidate(value: string): string | null {
@@ -31,13 +49,14 @@ export function CommandPalette() {
   const open = useStore((s) => s.cmdPaletteOpen);
   const setOpen = useStore((s) => s.setCmdPalette);
   const docs = useDocs();
+  const nonMdFiles = useNonMdFiles();
   const s = useStore.getState;
 
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const [pathError, setPathError] = useState<string | null>(null);
 
-  const items: Item[] = useMemo(() => {
+  const catalog = useMemo(() => {
     const close = () => setOpen(false);
 
     const commands: Item[] = [
@@ -104,6 +123,7 @@ export function CommandPalette() {
       .map((d) => ({
         id: `n:${d.docId}`,
         label: docName(d),
+        detail: folderPath(d.path),
         group: "Recent · with updates" as const,
         badge: `${unreadCount(d)} new`,
         icon: "\u25AA",
@@ -116,17 +136,57 @@ export function CommandPalette() {
       .map((d) => ({
         id: `n:${d.docId}`,
         label: docName(d),
+        detail: folderPath(d.path),
         group: "Notes" as const,
         icon: "\u25AB",
         run: () => { s().openDoc(d.docId); close(); },
       }));
 
-    return [...withUpdates, ...rest, ...commands];
+    const searchableFiles: SearchableItem[] = [
+      ...docs.map((d) => ({
+        name: fileName(d.path),
+        path: d.path,
+        item: {
+          id: `n:${d.docId}`,
+          label: docName(d),
+          detail: folderPath(d.path),
+          group: "Files" as const,
+          badge: unreadCount(d) > 0 ? `${unreadCount(d)} new` : undefined,
+          icon: "\u25AB",
+          run: () => { s().openDoc(d.docId); close(); },
+        },
+      })),
+      ...nonMdFiles
+        .filter((path) => extTier(rawExt(path)) === "readable")
+        .map((path) => ({
+          name: fileName(path),
+          path,
+          item: {
+            id: `f:${path}`,
+            label: fileName(path),
+            detail: folderPath(path),
+            group: "Files" as const,
+            icon: "\u25AB",
+            run: () => { s().openFile(path); close(); },
+          },
+        })),
+    ];
+
+    return {
+      defaultItems: [...withUpdates, ...rest, ...commands],
+      commands,
+      searchableFiles,
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docs, setOpen]);
+  }, [docs, nonMdFiles, setOpen]);
 
   const filtered = useMemo(() => {
-    const matches = q ? fuzzyFilter(q, items, (i) => i.label) : items;
+    const matches = q.trim()
+      ? [
+          ...searchFileCandidates(q, catalog.searchableFiles).map(({ item }) => item),
+          ...fuzzyFilter(q, catalog.commands, (item) => item.label),
+        ]
+      : catalog.defaultItems;
     const candidate = openPathCandidate(q);
     if (!candidate) return matches;
     const openItem: Item = {
@@ -146,7 +206,7 @@ export function CommandPalette() {
       },
     };
     return [openItem, ...matches];
-  }, [q, items, setOpen]);
+  }, [q, catalog, setOpen]);
 
   const clamped = Math.min(active, Math.max(0, filtered.length - 1));
 
@@ -277,7 +337,7 @@ export function CommandPalette() {
                       aria-selected={isActive}
                       className="flex w-full items-center gap-3 text-left"
                       style={{
-                        height: 34,
+                        height: it.detail ? 44 : 34,
                         padding: "0 16px",
                         fontSize: 13,
                         borderLeft: `3px solid ${isActive ? "var(--color-gold)" : "transparent"}`,
@@ -299,12 +359,33 @@ export function CommandPalette() {
                         style={{
                           flex: 1,
                           minWidth: 0,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        {it.label}
+                        <span
+                          style={{
+                            display: "block",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {it.label}
+                        </span>
+                        {it.detail && (
+                          <span
+                            style={{
+                              display: "block",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              fontFamily: "var(--font-mono)",
+                              fontSize: 10.5,
+                              color: "var(--color-mid)",
+                            }}
+                          >
+                            {it.detail}
+                          </span>
+                        )}
                       </span>
                       {it.badge && (
                         <span
@@ -371,7 +452,6 @@ export function CommandPalette() {
           {[
             { key: "↑↓", label: "navigate" },
             { key: "↵", label: "open" },
-            { key: "⌘↵", label: "open in split" },
           ].map(({ key, label }) => (
             <span key={key}>
               <span style={{ color: "var(--color-muted)" }}>{key}</span> {label}
