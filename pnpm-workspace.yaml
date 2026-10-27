@@ -5,3 +5,13 @@ packages:
 
 allowBuilds:
   esbuild: true
+
+overrides:
+  baseline-browser-mapping: ^2.11.0
+  browserslist: ^4.28.7
+  dompurify: ^3.4.17
+  esbuild: ^0.28.1
+  katex: 0.18.2
+  nanoid: ^3.3.18
+  postcss: ^8.5.23
+  source-map-js: ^1.2.2
