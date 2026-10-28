@@ -200,6 +200,18 @@ body {
   color: inherit;
 }
 
+.pirep-sidebar {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pirep-sidebar input,
+.pirep-sidebar textarea,
+.pirep-sidebar [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .cm-editor .cm-selectionBackground,
 .cm-editor.cm-focused .cm-selectionBackground {
   background: color-mix(in srgb, var(--color-gold) 26%, transparent) !important;

@@ -159,7 +159,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className="relative flex shrink-0 flex-col border-r border-line bg-tertiary"
+      className="pirep-sidebar relative flex shrink-0 flex-col border-r border-line bg-tertiary"
       style={{ width: sidebarWidth }}
     >
       {/* Top block follows the Shell spec: search row, then the segmented
