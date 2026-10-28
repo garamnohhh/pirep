@@ -75,7 +75,7 @@ export function SlideshowOverlay({
       style={{ background: "#111" }} role="dialog" aria-label={`${name} slideshow`}>
       {frameSrc && <iframe ref={frameRef} src={frameSrc} onLoad={() => { if (paging) command("first"); }}
         sandbox={pdfSrc ? undefined : "allow-scripts allow-same-origin allow-forms"}
-        style={{ flex: 1, border: "none", width: "100%", height: "100%", background: "#111" }} title={name} />}
+        style={{ flex: 1, border: "none", width: "100%", height: "100%", background: "#111" }} aria-label={name} />}
       <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-2">
         {paging && count > 0 && <span className="rounded-control px-2 py-1 text-[11px] tabular-nums"
           style={{ background: "rgba(0,0,0,0.55)", color: "var(--color-ink)", fontFamily: "var(--font-mono)" }}>

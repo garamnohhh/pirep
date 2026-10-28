@@ -171,7 +171,7 @@ function HtmlPreview({
       }}
       sandbox="allow-scripts allow-same-origin allow-forms"
       style={{ flex: 1, border: "none", width: "100%", height: "100%" }}
-      title={name}
+      aria-label={name}
     />
   );
 }
@@ -531,7 +531,7 @@ export function FileViewer() {
       <iframe
         src={pdfSrc}
         style={{ flex: 1, border: "none", width: "100%", minHeight: 0 }}
-        title={name}
+        aria-label={name}
       />
       {slideshow}
     </div>
