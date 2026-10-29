@@ -23,6 +23,7 @@ const isolatedWindowStorage = {
 };
 
 export interface ShortcutsMap {
+  goBase: string;
   sidebar: string;
   outline: string;
   focus: string;
@@ -37,6 +38,7 @@ export interface ShortcutsMap {
 }
 
 export const DEFAULT_SHORTCUTS: ShortcutsMap = {
+  goBase: "Meta+Shift+b",
   sidebar: "Meta+\\",
   outline: "Meta+Shift+\\",
   focus: "Meta+.",
@@ -50,18 +52,7 @@ export const DEFAULT_SHORTCUTS: ShortcutsMap = {
   pin: "Meta+d",
 };
 
-export function matchShortcut(e: KeyboardEvent, combo: string | undefined): boolean {
-  if (!combo) return false;
-  const parts = combo.split("+");
-  const key = parts[parts.length - 1];
-  return (
-    e.key === key &&
-    e.metaKey === parts.includes("Meta") &&
-    e.shiftKey === parts.includes("Shift") &&
-    e.altKey === parts.includes("Alt") &&
-    e.ctrlKey === parts.includes("Ctrl")
-  );
-}
+export { matchShortcut } from "../lib/shortcut";
 
 // One glyph per key, in the order the design system's Kbd rows print them.
 // Sidebar column bounds. The handoff fixes the column at 269, but resizing is
@@ -118,6 +109,7 @@ interface AppState {
   sidebarWidth: number;
   tocWidth: number;
   showEmptySections: boolean;
+  doubleMetaGoBase: boolean;
   shortcuts: ShortcutsMap;
   templates: Template[];
   // vault data
@@ -187,6 +179,7 @@ interface AppState {
   setSidebarWidth: (w: number) => void;
   setTocWidth: (w: number) => void;
   setShowEmptySections: (v: boolean) => void;
+  setDoubleMetaGoBase: (v: boolean) => void;
 
   goRabbitHole: (docId: string) => void;
   rabbitHolePush: (docId: string) => void;
@@ -229,6 +222,7 @@ function _build() { return create<AppState>()(
       sidebarWidth: SIDEBAR_MAX,
       tocWidth: 269,
       showEmptySections: true,
+      doubleMetaGoBase: true,
       shortcuts: DEFAULT_SHORTCUTS,
       templates: DEFAULT_TEMPLATES,
       db: null,
@@ -391,6 +385,7 @@ function _build() { return create<AppState>()(
       setTocWidth: (w) =>
         set({ tocWidth: Math.min(360, Math.max(212, w)) }),
       setShowEmptySections: (showEmptySections) => set({ showEmptySections }),
+      setDoubleMetaGoBase: (doubleMetaGoBase) => set({ doubleMetaGoBase }),
 
       applyDb: (db) => set({ db }),
       applyRenamedDb: (db, oldDocId, oldPath, newPath) => set((s) => {
@@ -603,6 +598,7 @@ function _build() { return create<AppState>()(
         sidebarWidth: s.sidebarWidth,
         tocWidth: s.tocWidth,
         showEmptySections: s.showEmptySections,
+        doubleMetaGoBase: s.doubleMetaGoBase,
         shortcuts: s.shortcuts,
         templates: s.templates,
       }),

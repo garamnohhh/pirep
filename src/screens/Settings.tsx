@@ -602,9 +602,12 @@ const TD: React.CSSProperties = {
 function ShortcutsTab() {
   const shortcuts = useStore((s) => s.shortcuts);
   const setShortcut = useStore((s) => s.setShortcut);
+  const doubleMetaGoBase = useStore((s) => s.doubleMetaGoBase);
+  const setDoubleMetaGoBase = useStore((s) => s.setDoubleMetaGoBase);
   const [capturing, setCapturing] = useState<keyof ShortcutsMap | null>(null);
 
   const ROWS: { key: keyof ShortcutsMap; label: string }[] = [
+    { key: "goBase", label: "Go to Base" },
     { key: "palette", label: "Command palette" },
     { key: "editMode", label: "Toggle edit mode" },
     { key: "pin", label: "Toggle pin" },
@@ -707,6 +710,16 @@ function ShortcutsTab() {
             </tbody>
           </table>
         ))}
+      </div>
+
+      <div style={{ marginTop: 22 }}>
+        <Row
+          label="Double-press ⌘ to go to Base"
+          sub="Turn this off if you use double-press ⌘ for macOS Dictation."
+          last
+        >
+          <Toggle on={doubleMetaGoBase} onChange={setDoubleMetaGoBase} />
+        </Row>
       </div>
 
       <button

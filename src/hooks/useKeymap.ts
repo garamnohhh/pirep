@@ -4,10 +4,39 @@ import { captureMode } from "../lib/captureMode";
 import { modalStack } from "../lib/modalStack";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { isCloseWindowShortcut } from "../lib/window-shortcuts";
+import { initialDoubleMetaState, updateDoubleMeta } from "../lib/doubleMeta";
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  return target instanceof Element
+    && target.closest("input, textarea, [contenteditable]:not([contenteditable='false']), .cm-editor") !== null;
+}
 
 export function useKeymap() {
   useEffect(() => {
+    let doubleMetaState = initialDoubleMetaState;
+
+    function handleDoubleMeta(e: KeyboardEvent, type: "keydown" | "keyup") {
+      const s = useStore.getState();
+      const result = updateDoubleMeta(doubleMetaState, {
+        type,
+        key: e.key,
+        at: e.timeStamp,
+        repeat: e.repeat,
+        blocked: captureMode.active
+          || !s.doubleMetaGoBase
+          || Boolean(s.externalFilePath)
+          || s.mode === "edit"
+          || s.fileEditMode
+          || s.cmdPaletteOpen
+          || modalStack.depth > 0
+          || isTypingTarget(e.target),
+      });
+      doubleMetaState = result.state;
+      if (result.triggered) s.goInbox();
+    }
+
     function onKey(e: KeyboardEvent) {
+      handleDoubleMeta(e, "keydown");
       if (captureMode.active) return;
 
       if (isCloseWindowShortcut(e)) {
@@ -43,6 +72,12 @@ export function useKeymap() {
           e.preventDefault();
           s.toggleFileEditMode();
         }
+        return;
+      }
+
+      if (matchShortcut(e, sc.goBase)) {
+        e.preventDefault();
+        s.goInbox();
         return;
       }
 
@@ -120,9 +155,23 @@ export function useKeymap() {
       }
     }
 
+    function onKeyUp(e: KeyboardEvent) {
+      handleDoubleMeta(e, "keyup");
+    }
+
+    function cancelDoubleMeta() {
+      doubleMetaState = updateDoubleMeta(doubleMetaState, { type: "cancel" }).state;
+    }
+
     // Capture phase: fires before element-level handlers (e.g. CommandPalette's onKeyDown),
     // so ESC sees cmdPaletteOpen=true before CommandPalette can set it to false.
     window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    window.addEventListener("pointerdown", cancelDoubleMeta, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("keyup", onKeyUp, true);
+      window.removeEventListener("pointerdown", cancelDoubleMeta, true);
+    };
   }, []);
 }

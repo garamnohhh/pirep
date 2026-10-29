@@ -89,6 +89,7 @@ export function CommandPalette() {
         id: "c:inbox",
         label: "Go to Knowledge Inbox",
         group: "Actions",
+        kbd: "⌘⇧B",
         icon: "\u2302",
         run: () => { s().goInbox(); close(); },
       },
