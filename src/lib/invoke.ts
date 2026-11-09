@@ -9,8 +9,8 @@ export const api = {
   listPinnedFiles: () => invoke<string[]>("list_pinned_files"),
   togglePinnedFile: (relPath: string) => invoke<string[]>("toggle_pinned_file", { relPath }),
   readDoc: (docId: string) => invoke<DocContent>("read_doc", { docId }),
-  writeDoc: (docId: string, content: string) =>
-    invoke<Db>("write_doc", { docId, content }),
+  writeDoc: (docId: string, content: string, expectedContent: string) =>
+    invoke<Db>("write_doc", { docId, content, expectedContent }),
   markRead: (docId: string) => invoke<Db>("mark_read", { docId }),
   markReadMany: (docIds: string[]) => invoke<Db>("mark_read_many", { docIds }),
   listUpdates: () => invoke<DocEntry[]>("list_updates"),
@@ -38,18 +38,18 @@ export const api = {
     invoke<string>("read_raw_file", { relPath }),
   openVaultFile: (relPath: string) =>
     invoke<void>("open_vault_file", { relPath }),
-  writeRawFile: (relPath: string, content: string) =>
-    invoke<void>("write_raw_file", { relPath, content }),
+  writeRawFile: (relPath: string, content: string, expectedContent: string) =>
+    invoke<void>("write_raw_file", { relPath, content, expectedContent }),
   readExternalMarkdown: (path: string) => invoke<string>("read_external_markdown", { path }),
   readExternalHtml: (path: string) => invoke<string>("read_external_html", { path }),
   registerExternalFileRoot: (path: string) => invoke<void>("register_external_file_root", { path }),
   watchExternalHtml: (path: string) => invoke<void>("watch_external_html", { path }),
   resolveExternalMarkdownLink: (sourcePath: string, target: string, wiki: boolean) =>
     invoke<string | null>("resolve_external_markdown_link", { sourcePath, target, wiki }),
-  writeExternalMarkdown: (path: string, content: string) =>
-    invoke<void>("write_external_markdown", { path, content }),
-  writeExternalHtml: (path: string, content: string) =>
-    invoke<void>("write_external_html", { path, content }),
+  writeExternalMarkdown: (path: string, content: string, expectedContent: string) =>
+    invoke<void>("write_external_markdown", { path, content, expectedContent }),
+  writeExternalHtml: (path: string, content: string, expectedContent: string) =>
+    invoke<void>("write_external_html", { path, content, expectedContent }),
   takePendingOpenFiles: () => invoke<string[]>("take_pending_open_files"),
   resolveOpenPath: (input: string) => invoke<string>("resolve_open_path", { input }),
   renameRawFile: (relPath: string, newName: string) =>

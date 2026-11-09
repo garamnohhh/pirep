@@ -10,6 +10,8 @@ import { UpdateNoticeBar } from "./UpdateNoticeBar";
 import { OutlinePanel } from "./OutlinePanel";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { RelatedTopics } from "./RelatedTopics";
+import { listen } from "@tauri-apps/api/event";
+import { decideConditionalSave } from "../../lib/conditionalSave";
 
 const SAVE_DELAY = 1200;
 
@@ -30,6 +32,8 @@ export function DocReader() {
   const [progress, setProgress] = useState(0);
   const [activeSlug, setActiveSlug] = useState<string>("");
   const [saved, setSaved] = useState(false);
+  const [changedOnDisk, setChangedOnDisk] = useState(false);
+  const [editorRevision, setEditorRevision] = useState(0);
   const relatedVisible = useStore((s) => s.relatedOpen);
   const toggleRelated = useStore((s) => s.toggleRelated);
 
@@ -37,6 +41,7 @@ export function DocReader() {
   const saveTimer = useRef<number | null>(null);
   const draft = useRef<string>("");
   const lastSaved = useRef<string>("");
+  const pendingWrite = useRef<string | null>(null);
   const anchorSlug = useRef<string>(""); // heading we're parked on, for mode sync
 
   const headings = useMemo(() => extractHeadings(source), [source]);
@@ -67,12 +72,22 @@ export function DocReader() {
       setSource(dc.content);
       draft.current = dc.content;
       lastSaved.current = dc.content;
+      pendingWrite.current = null;
+      setChangedOnDisk(false);
       setContentReady(true);
     }).catch(() => {
       if (!cancelled) goInbox();
     });
     return () => {
       cancelled = true;
+      if (!saveTimer.current) return;
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+      const content = draft.current;
+      const expected = lastSaved.current;
+      if (decideConditionalSave(content, expected) === "write") {
+        void api.writeDoc(docId, content, expected).catch((reason) => console.error("Could not save Markdown:", reason));
+      }
     };
   }, [docId, goInbox]);
 
@@ -87,22 +102,38 @@ export function DocReader() {
     });
   }, [contentReady, pendingScrollSlug, mode]);
 
+  const commitDraft = useCallback(async (): Promise<"saved" | "skipped" | "conflict"> => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    const text = draft.current;
+    const expected = lastSaved.current;
+    if (decideConditionalSave(text, expected) === "skip") return "skipped";
+    pendingWrite.current = text;
+    try {
+      const db = await api.writeDoc(docId, text, expected);
+      lastSaved.current = text;
+      pendingWrite.current = null;
+      setSource(text);
+      setChangedOnDisk(false);
+      applyDb(db);
+      const savedDoc = db.docs[docId];
+      if (savedDoc) useStore.setState({ readLockVersion: savedDoc.currentVersion });
+      return "saved";
+    } catch (reason) {
+      pendingWrite.current = null;
+      if (String(reason).includes("changed on disk")) setChangedOnDisk(true);
+      return "conflict";
+    }
+  }, [docId, applyDb]);
+
   const onInlineEdit = useCallback((newSource: string) => {
     setSource(newSource);
     draft.current = newSource;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(async () => {
-      if (draft.current === lastSaved.current) return;
-      const text = draft.current;
-      try {
-        const db = await api.writeDoc(docId, text);
-        lastSaved.current = text;
-        applyDb(db);
-        const saved_doc = db.docs[docId];
-        if (saved_doc) useStore.setState({ readLockVersion: saved_doc.currentVersion });
-      } catch { /* silent */ }
-    }, SAVE_DELAY);
-  }, [docId, applyDb]);
+    saveTimer.current = window.setTimeout(() => { void commitDraft(); }, SAVE_DELAY);
+  }, [commitDraft]);
 
   const onFrontmatterChange = useCallback((newFm: string) => {
     const newSource = source.replace(/^---\n[\s\S]*?\n---\n?/, `---\n${newFm}\n---\n`);
@@ -116,37 +147,23 @@ export function DocReader() {
       if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
       draft.current = text;
       setSource(text);
-      void api.writeDoc(docId, text).then((db) => {
-        lastSaved.current = text;
-        applyDb(db);
-        const savedDoc = db.docs[docId];
-        if (savedDoc) useStore.setState({ readLockVersion: savedDoc.currentVersion });
-      }).catch((error) => console.error("Could not toggle Markdown pin:", error));
+      void commitDraft().catch((error) => console.error("Could not toggle Markdown pin:", error));
     };
     window.addEventListener("pirep-toggle-pin", toggle);
     return () => window.removeEventListener("pirep-toggle-pin", toggle);
-  }, [mode, contentReady, docId, applyDb]);
+  }, [mode, contentReady, commitDraft]);
 
   const flushSave = useCallback(async () => {
     if (saveTimer.current) {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
     }
-    if (draft.current === lastSaved.current) return;
-    const text = draft.current;
-    try {
-      const db = await api.writeDoc(docId, text);
-      lastSaved.current = text;
-      setSource(text);
-      applyDb(db);
-      const saved_doc = db.docs[docId];
-      if (saved_doc) useStore.setState({ readLockVersion: saved_doc.currentVersion });
+    const result = await commitDraft();
+    if (result === "saved") {
       setSaved(true);
       setTimeout(() => setSaved(false), 1600);
-    } catch {
-      // write failed (e.g. file deleted externally) — silently drop
     }
-  }, [docId, applyDb]);
+  }, [commitDraft]);
 
   const onDraft = useCallback(
     (text: string) => {
@@ -156,6 +173,71 @@ export function DocReader() {
     },
     [flushSave],
   );
+
+  function useDiskContent(content: string, remount: boolean) {
+    setSource(content);
+    draft.current = content;
+    lastSaved.current = content;
+    pendingWrite.current = null;
+    setChangedOnDisk(false);
+    if (remount) setEditorRevision((value) => value + 1);
+  }
+
+  useEffect(() => {
+    if (mode !== "edit") { setContentReady(true); return; }
+    let cancelled = false;
+    setContentReady(false);
+    const load = async () => {
+      const savedDraft = await commitDraft();
+      if (savedDraft === "conflict") { if (!cancelled) setContentReady(true); return; }
+      const disk = await api.readDoc(docId);
+      if (!cancelled) {
+        useDiskContent(disk.content, true);
+        setContentReady(true);
+      }
+    };
+    void load().catch(() => { if (!cancelled) setContentReady(true); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, docId, commitDraft]);
+
+  useEffect(() => {
+    if (!doc?.path) return;
+    const changed = (paths: string[]) => {
+      if (!paths.includes(doc.path)) return;
+      void api.readDoc(docId).then((disk) => {
+        if (disk.content === draft.current || disk.content === pendingWrite.current) {
+          lastSaved.current = disk.content;
+          pendingWrite.current = null;
+          setSource(disk.content);
+          setChangedOnDisk(false);
+        } else if (disk.content === lastSaved.current) {
+          return;
+        } else if (draft.current === lastSaved.current) {
+          useDiskContent(disk.content, mode === "edit");
+        } else if (decideConditionalSave(draft.current, lastSaved.current, disk.content) === "conflict") {
+          setChangedOnDisk(true);
+        }
+      }).catch(() => setChangedOnDisk(true));
+    };
+    const listener = listen<string[]>("vault-changed", (event) => changed(event.payload));
+    return () => { void listener.then((stop) => stop()); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docId, doc?.path, mode]);
+
+  async function reloadMarkdown() {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+    const disk = await api.readDoc(docId);
+    useDiskContent(disk.content, true);
+    setContentReady(true);
+  }
+
+  async function keepMarkdown() {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+    lastSaved.current = (await api.readDoc(docId)).content;
+    const result = await commitDraft();
+    if (result !== "conflict") setChangedOnDisk(false);
+  }
 
   // save when leaving edit
   useEffect(() => {
@@ -202,6 +284,13 @@ export function DocReader() {
     <div className="flex h-full min-h-0">
       {/* center column — relative so the edit border overlay can be absolute */}
       <div className="relative min-w-0 flex-1">
+        {changedOnDisk && (
+          <div role="alert" className="absolute inset-x-0 top-0 z-20 flex items-center justify-center gap-2 bg-[var(--color-ink)] px-3 py-1 text-xs text-[var(--color-paper)]">
+            <span>This file changed on disk.</span>
+            <button className="underline" onClick={() => { void reloadMarkdown(); }}>Reload</button>
+            <button className="underline" onClick={() => { void keepMarkdown(); }}>Keep mine</button>
+          </div>
+        )}
         {/* Top-right read-mode buttons */}
         {mode === "read" && (
           <div className="absolute right-4 top-4 z-10 flex items-center gap-1">
@@ -235,8 +324,8 @@ export function DocReader() {
           >
             <UpdateNoticeBar doc={doc} />
             {mode === "edit" ? (
-              contentReady && <SourceEditor
-                key={docId}
+              contentReady ? <SourceEditor
+                key={`${docId}:${editorRevision}`}
                 initialSource={source}
                 initialCursor={bodyOffset}
                 currentDocPath={doc.path}
@@ -245,7 +334,7 @@ export function DocReader() {
                 onCursorHeading={(s) => {
                   if (s) anchorSlug.current = s;
                 }}
-              />
+              /> : <div className="text-sm text-muted">Loading…</div>
             ) : (
               <>
                 <PropertiesPanel

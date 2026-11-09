@@ -66,8 +66,8 @@ pub fn watch_external_html(
 ) -> Result<(), String> {
     let label = webview.label().to_string();
     let file = Path::new(&path).canonicalize().map_err(|e| e.to_string())?;
-    if !is_html(&file) || roots.get(&label).as_deref() != file.parent() {
-        return Err("external HTML file is not registered".into());
+    if !(is_html(&file) || is_markdown(&file)) || roots.get(&label).as_deref() != file.parent() {
+        return Err("external document file is not registered".into());
     }
     let root = file.parent().ok_or("invalid HTML path")?.to_path_buf();
     let shallow = is_shallow_root(&root, &home_dir());

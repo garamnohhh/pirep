@@ -19,6 +19,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
 import { htmlAffectedByChanges } from "../../lib/htmlRefresh";
 import { ExtChip } from "../ui/ExtChip";
+import { decideConditionalSave } from "../../lib/conditionalSave";
 
 // svg moved out of IMAGE_EXTS so it becomes editable text
 const IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "gif", "webp"]);
@@ -388,15 +389,19 @@ export function FileViewer() {
   const [error, setError] = useState<string | null>(null);
   const saveTimer = useRef<number | null>(null);
   const draft = useRef<string>("");
+  const baseline = useRef<string>("");
+  const pendingWrite = useRef<string | null>(null);
   const prevEditMode = useRef(fileEditMode);
+  const [editReady, setEditReady] = useState(false);
+  const [editorRevision, setEditorRevision] = useState(0);
 
   // Sync draft → text when exiting edit mode so read view stays up to date
   useEffect(() => {
-    if (prevEditMode.current && !fileEditMode) {
+    if (prevEditMode.current && !fileEditMode && !fileChangedOnDisk) {
       setText(draft.current);
     }
     prevEditMode.current = fileEditMode;
-  }, [fileEditMode]);
+  }, [fileEditMode, fileChangedOnDisk]);
 
   const name = relPath.split("/").pop() ?? relPath;
   const fileExt = getExt(name);
@@ -412,22 +417,43 @@ export function FileViewer() {
   }, []);
 
   useEffect(() => {
-    if (!isHtml || externalFilePath) return;
+    if (!isText || externalFilePath) return;
     const changed = (paths: string[]) => {
-      if (!htmlAffectedByChanges(relPath, paths)) return;
-      if (fileEditMode) {
-        if (!paths.includes(relPath)) return;
-        if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+      const sourceChanged = paths.includes(relPath);
+      const previewChanged = isHtml && htmlAffectedByChanges(relPath, paths);
+      if (!sourceChanged && !previewChanged) return;
+      if (sourceChanged) {
         void api.readRawFile(relPath).then((data) => {
-          if (b64ToUtf8(data) !== draft.current) setFileChangedOnDisk(true);
+          const disk = b64ToUtf8(data);
+          if (draft.current === baseline.current) {
+            draft.current = disk;
+            baseline.current = disk;
+            pendingWrite.current = null;
+            setB64(data);
+            setText(disk);
+            setFileChangedOnDisk(false);
+            if (fileEditMode) setEditorRevision((value) => value + 1);
+          } else if (disk === draft.current || disk === pendingWrite.current) {
+            baseline.current = disk;
+            pendingWrite.current = null;
+            setFileChangedOnDisk(false);
+          } else if (disk === baseline.current) {
+            return;
+          } else if (decideConditionalSave(draft.current, baseline.current, disk) === "conflict") {
+            setFileChangedOnDisk(true);
+          }
         }).catch(() => setFileChangedOnDisk(true));
-      } else if (showSlides) deferredPreview.current = true;
-      else { setPreviewReset((n) => n + 1); showUpdatedFromDisk(); }
+      }
+      if (previewChanged && !fileEditMode) {
+        if (showSlides) deferredPreview.current = true;
+        else setPreviewReset((n) => n + 1);
+      }
+      if (!fileEditMode) showUpdatedFromDisk();
     };
     const a = listen<string[]>("vault-changed", (event) => changed(event.payload));
     const b = listen<string[]>("files-changed", (event) => changed(event.payload));
     return () => { void a.then((stop) => stop()); void b.then((stop) => stop()); };
-  }, [relPath, isHtml, externalFilePath, fileEditMode, showSlides, showUpdatedFromDisk]);
+  }, [relPath, isHtml, isText, externalFilePath, fileEditMode, showSlides, showUpdatedFromDisk]);
 
   const htmlSrc = isHtml && vaultRoot ? assetFileHref(vaultRoot, relPath) : undefined;
   const onPreviewLocation = useCallback((href: string) => {
@@ -450,19 +476,59 @@ export function FileViewer() {
 
   useEffect(() => {
     if (externalFilePath) return;
+    let cancelled = false;
     setB64(null); setText(""); setError(null);
     if (saveTimer.current) clearTimeout(saveTimer.current);
 
     api.readRawFile(relPath).then((data) => {
+      if (cancelled) return;
       setB64(data);
       if (isText) {
         const decoded = b64ToUtf8(data);
         setText(decoded);
         draft.current = decoded;
+        baseline.current = decoded;
       }
-    }).catch((e) => setError(String(e)));
+    }).catch((e) => { if (!cancelled) setError(String(e)); });
+    return () => {
+      cancelled = true;
+      if (!saveTimer.current) return;
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+      const content = draft.current;
+      const expected = baseline.current;
+      if (decideConditionalSave(content, expected) === "write") {
+        void api.writeRawFile(relPath, content, expected).catch((reason) => console.error("Could not save file:", reason));
+      }
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relPath, externalFilePath]);
+
+  useEffect(() => {
+    if (externalFilePath || !isText || !fileEditMode) return;
+    let cancelled = false;
+    setEditReady(false);
+    const load = async () => {
+      if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+      const saved = await saveRawDraft();
+      if (saved === "conflict") { if (!cancelled) setEditReady(true); return; }
+      const data = await api.readRawFile(relPath);
+      if (cancelled) return;
+      const disk = b64ToUtf8(data);
+      draft.current = disk;
+      baseline.current = disk;
+      pendingWrite.current = null;
+      setB64(data);
+      setText(disk);
+      setFileChangedOnDisk(false);
+      setEditorRevision((value) => value + 1);
+      setEditReady(true);
+    };
+    void load().catch((reason) => { if (!cancelled) setError(String(reason)); });
+    return () => { cancelled = true; };
+    // saveRawDraft reads refs so edit entry always uses the current draft and baseline.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [relPath, externalFilePath, isText, fileEditMode]);
 
   if (externalFilePath) {
     if (/\.(html|htm)$/i.test(externalFilePath)) {
@@ -474,10 +540,62 @@ export function FileViewer() {
   function handleEdit(value: string) {
     draft.current = value;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(async () => {
+    saveTimer.current = window.setTimeout(() => {
       saveTimer.current = null;
-      try { await api.writeRawFile(relPath, draft.current); } catch { /* silent */ }
+      void saveRawDraft();
     }, SAVE_DELAY);
+  }
+
+  async function saveRawDraft(): Promise<"saved" | "skipped" | "conflict"> {
+    const content = draft.current;
+    const expected = baseline.current;
+    if (decideConditionalSave(content, expected) === "skip") return "skipped";
+    pendingWrite.current = content;
+    try {
+      await api.writeRawFile(relPath, content, expected);
+      baseline.current = content;
+      pendingWrite.current = null;
+      setText(content);
+      return "saved";
+    } catch (reason) {
+      pendingWrite.current = null;
+      if (String(reason).includes("changed on disk")) {
+        setFileChangedOnDisk(true);
+        return "conflict";
+      }
+      setError(String(reason));
+      return "conflict";
+    }
+  }
+
+  async function reloadRawFile() {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+    const data = await api.readRawFile(relPath);
+    const disk = b64ToUtf8(data);
+    draft.current = disk;
+    baseline.current = disk;
+    pendingWrite.current = null;
+    setB64(data);
+    setText(disk);
+    setFileChangedOnDisk(false);
+    setEditorRevision((value) => value + 1);
+  }
+
+  async function keepRawDraft() {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+    const data = await api.readRawFile(relPath);
+    baseline.current = b64ToUtf8(data);
+    const content = draft.current;
+    try {
+      await api.writeRawFile(relPath, content, baseline.current);
+    } catch (reason) {
+      if (String(reason).includes("changed on disk")) { setFileChangedOnDisk(true); return; }
+      throw reason;
+    }
+    baseline.current = content;
+    setB64(data);
+    setText(content);
+    setFileChangedOnDisk(false);
   }
 
   if (error) return (
@@ -557,29 +675,23 @@ export function FileViewer() {
       <div className="relative min-w-0 flex-1 overflow-hidden">
         <div className="doc-scroll h-full overflow-y-auto">
           <div style={{ maxWidth: maxW, margin: "0 auto", padding: "40px 56px" }}>
-            {fileEditMode ? (
+            {fileEditMode ? editReady ? (
               <FileEditorHost
-                key={relPath}
+                key={`${relPath}:${editorRevision}`}
                 filename={name}
                 text={text}
                 onChange={handleEdit}
               />
-            ) : (
+            ) : <div className="text-sm text-muted">Loading…</div> : (
               <RawShikiView code={text} lang={fileExt} />
             )}
           </div>
         </div>
-        {fileEditMode && fileChangedOnDisk && (
-          <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-2 bg-[var(--color-ink)] px-3 py-1 text-xs text-[var(--color-paper)]">
+        {fileChangedOnDisk && (
+          <div role="alert" className="absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-2 bg-[var(--color-ink)] px-3 py-1 text-xs text-[var(--color-paper)]">
             <span>This file changed on disk.</span>
-            <button className="underline" onClick={async () => {
-              if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
-              try {
-                const data = await api.readRawFile(relPath);
-                const diskText = b64ToUtf8(data);
-                draft.current = diskText; setB64(data); setText(diskText); setFileChangedOnDisk(false);
-              } catch (e) { setError(String(e)); }
-            }}>Reload</button>
+            <button className="underline" onClick={() => { void reloadRawFile().catch((reason) => setError(String(reason))); }}>Reload</button>
+            <button className="underline" onClick={() => { void keepRawDraft().catch((reason) => setError(String(reason))); }}>Keep mine</button>
           </div>
         )}
         {fileEditMode && (
@@ -628,6 +740,10 @@ function ExternalHtmlFile({ path, fileEditMode }: { path: string; fileEditMode: 
   const src = assetFileHref(parent, name);
   const frame = useRef<HTMLIFrameElement>(null);
   const draft = useRef("");
+  const baseline = useRef("");
+  const pendingWrite = useRef<string | null>(null);
+  const editMode = useRef(fileEditMode);
+  const loaded = useRef(false);
   const timer = useRef<number | null>(null);
   const noticeTimer = useRef<number | null>(null);
   const [source, setSource] = useState("");
@@ -636,6 +752,37 @@ function ExternalHtmlFile({ path, fileEditMode }: { path: string; fileEditMode: 
   const [reload, setReload] = useState(0);
   const [updated, setUpdated] = useState(false);
   const [ready, setReady] = useState(false);
+  const [editorRevision, setEditorRevision] = useState(0);
+
+  editMode.current = fileEditMode;
+
+  function useDiskText(text: string, remount: boolean) {
+    draft.current = text;
+    baseline.current = text;
+    pendingWrite.current = null;
+    setSource(text);
+    setChanged(false);
+    if (remount) setEditorRevision((value) => value + 1);
+  }
+
+  async function saveDraft(): Promise<"saved" | "skipped" | "conflict"> {
+    const content = draft.current;
+    const expected = baseline.current;
+    if (decideConditionalSave(content, expected) === "skip") return "skipped";
+    pendingWrite.current = content;
+    try {
+      await api.writeExternalHtml(path, content, expected);
+      baseline.current = content;
+      pendingWrite.current = null;
+      setChanged(false);
+      return "saved";
+    } catch (reason) {
+      pendingWrite.current = null;
+      if (String(reason).includes("changed on disk")) setChanged(true);
+      else setError(String(reason));
+      return "conflict";
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -645,19 +792,28 @@ function ExternalHtmlFile({ path, fileEditMode }: { path: string; fileEditMode: 
       await api.registerExternalFileRoot(path);
       await api.watchExternalHtml(path);
       const text = await api.readExternalHtml(path);
-      if (!cancelled) { draft.current = text; setSource(text); setReady(true); }
+      if (!cancelled) { loaded.current = true; useDiskText(text, false); setReady(true); }
     };
     void load().catch((reason) => { if (!cancelled) setError(String(reason)); });
     void listen<string[]>("external-html-changed", (event) => {
       const changedPaths = event.payload;
       if (!htmlAffectedByChanges(name, changedPaths)) return;
-      if (fileEditMode) {
-        if (!changedPaths.includes(name)) return;
-        if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
+      if (changedPaths.includes(name)) {
         void api.readExternalHtml(path).then((text) => {
-          if (text !== draft.current) setChanged(true);
+          if (draft.current === baseline.current) {
+            useDiskText(text, editMode.current);
+          } else if (text === draft.current || text === pendingWrite.current) {
+            baseline.current = text;
+            pendingWrite.current = null;
+            setChanged(false);
+          } else if (text === baseline.current) {
+            return;
+          } else if (decideConditionalSave(draft.current, baseline.current, text) === "conflict") {
+            setChanged(true);
+          }
         }).catch(() => setChanged(true));
-      } else {
+      }
+      if (!editMode.current) {
         setReload((value) => value + 1);
         setUpdated(true);
         if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
@@ -669,34 +825,76 @@ function ExternalHtmlFile({ path, fileEditMode }: { path: string; fileEditMode: 
       stop?.();
       if (timer.current) {
         window.clearTimeout(timer.current);
-        void api.writeExternalHtml(path, draft.current).catch((reason) => console.error("Could not save external HTML:", reason));
+        if (decideConditionalSave(draft.current, baseline.current) === "write") {
+          void api.writeExternalHtml(path, draft.current, baseline.current).catch((reason) => console.error("Could not save external HTML:", reason));
+        }
       }
       if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
     };
-  }, [path, fileEditMode, name]);
+    // Event handlers use refs so changing mode does not tear down the watcher.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, name]);
+
+  useEffect(() => {
+    if (!fileEditMode) { if (loaded.current) setReady(true); return; }
+    let cancelled = false;
+    setReady(false);
+    const load = async () => {
+      if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
+      const saved = await saveDraft();
+      if (saved === "conflict") { if (!cancelled) setReady(true); return; }
+      const text = await api.readExternalHtml(path);
+      if (!cancelled) { loaded.current = true; useDiskText(text, true); setReady(true); }
+    };
+    void load().catch((reason) => { if (!cancelled) setError(String(reason)); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileEditMode, path]);
 
   function onChange(value: string) {
     draft.current = value;
     setSource(value);
-    setChanged(false);
     if (timer.current) window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => {
       timer.current = null;
-      void api.writeExternalHtml(path, draft.current).catch((reason) => setError(String(reason)));
+      void saveDraft();
     }, SAVE_DELAY);
+  }
+
+  async function reloadExternalHtml() {
+    if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
+    useDiskText(await api.readExternalHtml(path), true);
+    setReload((value) => value + 1);
+  }
+
+  async function keepExternalHtml() {
+    if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
+    baseline.current = await api.readExternalHtml(path);
+    const content = draft.current;
+    try {
+      await api.writeExternalHtml(path, content, baseline.current);
+    } catch (reason) {
+      if (String(reason).includes("changed on disk")) { setChanged(true); return; }
+      throw reason;
+    }
+    baseline.current = content;
+    setSource(content);
+    setChanged(false);
+    setReload((value) => value + 1);
   }
 
   if (error) return <div className="p-8 text-sm text-muted">{error}</div>;
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      {fileEditMode && changed && (
-        <div className="absolute inset-x-0 top-0 z-10 flex justify-center gap-2 bg-[var(--color-ink)] px-3 py-1 text-xs text-[var(--color-paper)]">
+      {changed && (
+        <div role="alert" className="absolute inset-x-0 top-0 z-10 flex justify-center gap-2 bg-[var(--color-ink)] px-3 py-1 text-xs text-[var(--color-paper)]">
           <span>This file changed on disk.</span>
-          <button className="underline" onClick={() => { void api.readExternalHtml(path).then((text) => { draft.current = text; setSource(text); setChanged(false); }); }}>Reload</button>
+          <button className="underline" onClick={() => { void reloadExternalHtml().catch((reason) => setError(String(reason))); }}>Reload</button>
+          <button className="underline" onClick={() => { void keepExternalHtml().catch((reason) => setError(String(reason))); }}>Keep mine</button>
         </div>
       )}
       {!fileEditMode && updated && <UpdatedFromDisk />}
-      {!ready ? <div className="p-8 text-sm text-muted">Loading…</div> : fileEditMode ? <FileEditorHost key={path} filename={name} text={source} onChange={onChange} /> : (
+      {!ready ? <div className="p-8 text-sm text-muted">Loading…</div> : fileEditMode ? <FileEditorHost key={`${path}:${editorRevision}`} filename={name} text={source} onChange={onChange} /> : (
         <HtmlPreview src={src} name={name} frame={frame} onLocation={() => {}} reloadToken={reload} />
       )}
     </div>
@@ -706,44 +904,150 @@ function ExternalHtmlFile({ path, fileEditMode }: { path: string; fileEditMode: 
 function ExternalMarkdownFile({ path, fileEditMode }: { path: string; fileEditMode: boolean }) {
   const [source, setSource] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [changed, setChanged] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [editorRevision, setEditorRevision] = useState(0);
   const draft = useRef("");
+  const baseline = useRef("");
+  const pendingWrite = useRef<string | null>(null);
+  const editMode = useRef(fileEditMode);
+  const loaded = useRef(false);
   const timer = useRef<number | null>(null);
   const name = path.split("/").pop() ?? path;
 
+  editMode.current = fileEditMode;
+
+  function useDiskText(text: string, remount: boolean) {
+    draft.current = text;
+    baseline.current = text;
+    pendingWrite.current = null;
+    setSource(text);
+    setChanged(false);
+    if (remount) setEditorRevision((value) => value + 1);
+  }
+
+  async function saveDraft(): Promise<"saved" | "skipped" | "conflict"> {
+    const content = draft.current;
+    const expected = baseline.current;
+    if (decideConditionalSave(content, expected) === "skip") return "skipped";
+    pendingWrite.current = content;
+    try {
+      await api.writeExternalMarkdown(path, content, expected);
+      baseline.current = content;
+      pendingWrite.current = null;
+      setChanged(false);
+      return "saved";
+    } catch (reason) {
+      pendingWrite.current = null;
+      if (String(reason).includes("changed on disk")) setChanged(true);
+      else setError(String(reason));
+      return "conflict";
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
-    api.registerExternalFileRoot(path).then(() => api.readExternalMarkdown(path)).then((text) => {
-      if (cancelled) return;
-      draft.current = text;
-      setSource(text);
-    }).catch((reason) => { if (!cancelled) setError(String(reason)); });
+    let stop: (() => void) | undefined;
+    setReady(false);
+    const load = async () => {
+      await api.registerExternalFileRoot(path);
+      await api.watchExternalHtml(path);
+      const text = await api.readExternalMarkdown(path);
+      if (!cancelled) { loaded.current = true; useDiskText(text, false); setReady(true); }
+    };
+    void load().catch((reason) => { if (!cancelled) setError(String(reason)); });
+    void listen<string[]>("external-html-changed", (event) => {
+      if (!event.payload.includes(name)) return;
+      void api.readExternalMarkdown(path).then((text) => {
+        if (draft.current === baseline.current) {
+          useDiskText(text, editMode.current);
+        } else if (text === draft.current || text === pendingWrite.current) {
+          baseline.current = text;
+          pendingWrite.current = null;
+          setChanged(false);
+        } else if (text === baseline.current) {
+          return;
+        } else if (decideConditionalSave(draft.current, baseline.current, text) === "conflict") {
+          setChanged(true);
+        }
+      }).catch(() => setChanged(true));
+    }).then((unlisten) => { stop = unlisten; if (cancelled) unlisten(); });
     return () => {
       cancelled = true;
+      stop?.();
       if (timer.current) {
         window.clearTimeout(timer.current);
-        void api.writeExternalMarkdown(path, draft.current).catch((reason) =>
-          console.error("Could not save external Markdown:", reason),
-        );
+        if (decideConditionalSave(draft.current, baseline.current) === "write") {
+          void api.writeExternalMarkdown(path, draft.current, baseline.current).catch((reason) =>
+            console.error("Could not save external Markdown:", reason),
+          );
+        }
       }
     };
-  }, [path]);
+    // Event handlers use refs so changing mode does not tear down the watcher.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, name]);
+
+  useEffect(() => {
+    if (!fileEditMode) { if (loaded.current) setReady(true); return; }
+    let cancelled = false;
+    setReady(false);
+    const load = async () => {
+      if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
+      const saved = await saveDraft();
+      if (saved === "conflict") { if (!cancelled) setReady(true); return; }
+      const text = await api.readExternalMarkdown(path);
+      if (!cancelled) { loaded.current = true; useDiskText(text, true); setReady(true); }
+    };
+    void load().catch((reason) => { if (!cancelled) setError(String(reason)); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileEditMode, path]);
 
   function onChange(value: string) {
     draft.current = value;
     setSource(value);
     if (timer.current) window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => {
-      void api.writeExternalMarkdown(path, draft.current).catch((reason) => setError(String(reason)));
+      timer.current = null;
+      void saveDraft();
     }, SAVE_DELAY);
+  }
+
+  async function reloadExternalMarkdown() {
+    if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
+    useDiskText(await api.readExternalMarkdown(path), true);
+  }
+
+  async function keepExternalMarkdown() {
+    if (timer.current) { window.clearTimeout(timer.current); timer.current = null; }
+    baseline.current = await api.readExternalMarkdown(path);
+    const content = draft.current;
+    try {
+      await api.writeExternalMarkdown(path, content, baseline.current);
+    } catch (reason) {
+      if (String(reason).includes("changed on disk")) { setChanged(true); return; }
+      throw reason;
+    }
+    baseline.current = content;
+    setSource(content);
+    setChanged(false);
   }
 
   if (error) return <div className="p-8 text-sm text-muted">{error}</div>;
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      {changed && (
+        <div role="alert" className="absolute inset-x-0 top-0 z-10 flex justify-center gap-2 bg-[var(--color-ink)] px-3 py-1 text-xs text-[var(--color-paper)]">
+          <span>This file changed on disk.</span>
+          <button className="underline" onClick={() => { void reloadExternalMarkdown().catch((reason) => setError(String(reason))); }}>Reload</button>
+          <button className="underline" onClick={() => { void keepExternalMarkdown().catch((reason) => setError(String(reason))); }}>Keep mine</button>
+        </div>
+      )}
       <div className="doc-scroll min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto px-[32px] pt-16 pb-[120px]" style={{ maxWidth: "var(--spacing-reading)" }}>
-          {fileEditMode ? (
-            <FileEditorHost key={path} filename={name} text={source} onChange={onChange} />
+          {!ready ? <div className="p-8 text-sm text-muted">Loading…</div> : fileEditMode ? (
+            <FileEditorHost key={`${path}:${editorRevision}`} filename={name} text={source} onChange={onChange} />
           ) : (
             <MarkdownRenderer source={source} />
           )}

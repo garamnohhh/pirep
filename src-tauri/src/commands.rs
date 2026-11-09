@@ -148,14 +148,29 @@ fn rename_doc_at(root: &Path, doc_id: &str, new_rel_path: &str) -> Result<Db, St
     vault::rename_doc(root, doc_id, new_rel_path)
 }
 
+fn write_doc_at(root: &Path, doc_id: &str, content: &str, expected_content: &str) -> Result<Db, String> {
+    if vault::read_doc(root, doc_id)?.content != expected_content {
+        return Err("changed on disk".into());
+    }
+    vault::write_doc(root, doc_id, content, "in-app")
+}
+
 fn read_raw_file_at(root: &Path, rel_path: &str) -> Result<String, String> {
     use base64::Engine;
     let bytes = std::fs::read(vault_file(root, rel_path)?).map_err(|e| e.to_string())?;
     Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
 }
 
-fn write_raw_file_at(root: &Path, rel_path: &str, content: &str) -> Result<(), String> {
-    std::fs::write(vault_file(root, rel_path)?, content.as_bytes()).map_err(|e| e.to_string())
+fn write_file_if_unchanged(path: &Path, content: &str, expected_content: &str) -> Result<(), String> {
+    let current = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    if current != expected_content {
+        return Err("changed on disk".into());
+    }
+    std::fs::write(path, content.as_bytes()).map_err(|e| e.to_string())
+}
+
+fn write_raw_file_at(root: &Path, rel_path: &str, content: &str, expected_content: &str) -> Result<(), String> {
+    write_file_if_unchanged(&vault_file(root, rel_path)?, content, expected_content)
 }
 
 fn external_markdown_path(path: &str) -> Result<PathBuf, String> {
@@ -174,9 +189,9 @@ pub fn read_external_html(path: String, webview: Webview, roots: State<'_, crate
 }
 
 #[tauri::command]
-pub fn write_external_html(path: String, content: String, webview: Webview, roots: State<'_, crate::external_files::ExternalFileRoots>) -> Result<(), String> {
+pub fn write_external_html(path: String, content: String, expected_content: String, webview: Webview, roots: State<'_, crate::external_files::ExternalFileRoots>) -> Result<(), String> {
     let file = crate::external_files::registered_html_path(&path, webview.label(), &roots)?;
-    std::fs::write(file, content.as_bytes()).map_err(|e| e.to_string())
+    write_file_if_unchanged(&file, &content, &expected_content)
 }
 
 #[tauri::command]
@@ -185,8 +200,8 @@ pub fn read_external_markdown(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn write_external_markdown(path: String, content: String) -> Result<(), String> {
-    std::fs::write(external_markdown_path(&path)?, content.as_bytes()).map_err(|e| e.to_string())
+pub fn write_external_markdown(path: String, content: String, expected_content: String) -> Result<(), String> {
+    write_file_if_unchanged(&external_markdown_path(&path)?, &content, &expected_content)
 }
 
 fn rename_raw_file_at(root: &Path, rel_path: &str, new_name: &str) -> Result<(), String> {
@@ -334,8 +349,8 @@ pub fn read_doc(doc_id: String, state: State<VaultState>) -> Result<DocContent, 
 }
 
 #[tauri::command]
-pub fn write_doc(doc_id: String, content: String, state: State<VaultState>) -> Result<Db, String> {
-    vault::write_doc(&get_root(&state)?, &doc_id, &content, "in-app")
+pub fn write_doc(doc_id: String, content: String, expected_content: String, state: State<VaultState>) -> Result<Db, String> {
+    write_doc_at(&get_root(&state)?, &doc_id, &content, &expected_content)
 }
 
 #[tauri::command]
@@ -458,8 +473,8 @@ pub fn open_vault_file(
 }
 
 #[tauri::command]
-pub fn write_raw_file(rel_path: String, content: String, state: State<VaultState>) -> Result<(), String> {
-    write_raw_file_at(&get_root(&state)?, &rel_path, &content)
+pub fn write_raw_file(rel_path: String, content: String, expected_content: String, state: State<VaultState>) -> Result<(), String> {
+    write_raw_file_at(&get_root(&state)?, &rel_path, &content, &expected_content)
 }
 
 #[tauri::command]
@@ -531,7 +546,7 @@ mod tests {
         std::fs::write(&file, "before").unwrap();
         std::fs::write(&neighbor, "untouched").unwrap();
 
-        write_external_markdown(file.to_string_lossy().into_owned(), "after".into()).unwrap();
+        write_external_markdown(file.to_string_lossy().into_owned(), "after".into(), "before".into()).unwrap();
         assert_eq!(read_external_markdown(file.to_string_lossy().into_owned()).unwrap(), "after");
         assert_eq!(std::fs::read_to_string(neighbor).unwrap(), "untouched");
         assert!(!root.join(".pirep").exists());
@@ -831,11 +846,47 @@ mod tests {
         let (base, root, paths) = escape_fixture("write-escape");
         for path in paths {
             assert!(
-                write_raw_file_at(&root, &path, "changed").is_err(),
+                write_raw_file_at(&root, &path, "changed", "inside").is_err(),
                 "{path}"
             );
         }
         std::fs::remove_dir_all(base).unwrap();
+    }
+
+    #[test]
+    fn conditional_write_accepts_matching_baseline_and_rejects_changed_disk() {
+        let dir = std::env::temp_dir().join(format!("pirep-conditional-write-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("note.txt");
+        std::fs::write(&file, "base").unwrap();
+
+        write_file_if_unchanged(&file, "mine", "base").unwrap();
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "mine");
+
+        std::fs::write(&file, "other").unwrap();
+        assert_eq!(write_file_if_unchanged(&file, "stale", "base"), Err("changed on disk".into()));
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "other");
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn conditional_markdown_write_rejects_changed_disk() {
+        let root = std::env::temp_dir().join(format!("pirep-conditional-markdown-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let file = root.join("note.md");
+        std::fs::write(&file, "base").unwrap();
+        vault::scan(&root).unwrap();
+
+        write_doc_at(&root, "note.md", "mine", "base").unwrap();
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "mine");
+
+        std::fs::write(&file, "other").unwrap();
+        assert!(matches!(
+            write_doc_at(&root, "note.md", "stale", "mine"),
+            Err(error) if error == "changed on disk"
+        ));
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "other");
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
