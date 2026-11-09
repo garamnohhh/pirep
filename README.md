@@ -33,6 +33,7 @@ No server, no account, no cloud. The files stay in your folder; pirep only reads
 | Finding | `⌘K` searches every file in the Base by name and folder; `⌘F` searches inside the open document |
 | Quick Look | Press Space on a Markdown file in Finder to see it rendered |
 | Open from Finder | Markdown files open in their Base; files outside any Base open in their own window; relative images and links there resolve next to the file |
+| Base home | Press `⌘` twice or `⌘⇧B` to go to the Base's first screen; double-press `⌘` can be turned off in Settings, for example for macOS Dictation |
 
 Open a Markdown or HTML file with `pirep:///<absolute-path>`; percent-encode spaces and non-ASCII characters when needed.
 
@@ -77,7 +78,7 @@ If macOS says the app is damaged, remove only its quarantine flag with `xattr -d
 
 - **Apple Silicon only** (M1 and later). It will not run on an Intel Mac.
 - Built on macOS 26, and still fine on 27.
-- The current release is `0.2.7`, published on 2026-10-28.
+- The current release is `0.2.8`, published on 2026-11-09.
 
 ## Building from source
 
