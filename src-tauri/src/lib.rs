@@ -1,6 +1,7 @@
 mod assets;
 mod commands;
 mod default_app;
+mod double_meta;
 mod external_files;
 mod vault;
 
@@ -163,6 +164,7 @@ pub fn run() {
         .setup(|app| {
             #[cfg(target_os = "macos")]
             {
+                double_meta::install(app.handle().clone());
                 // No set_icon here: on macOS tao's set_window_icon is a no-op
                 // (windows have no icon), and the Dock icon comes from
                 // icons/icon.icns — the bundle's in a release build, and the
