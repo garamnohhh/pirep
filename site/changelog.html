@@ -81,25 +81,44 @@ img[src*="assets/"] { border: 1px solid var(--line); }
   </style><style>
 html[data-lang="ko"] .l-en, html:not([data-lang="ko"]) .l-ko { display: none; }
 </style>
+<style>
+/* Phones: the bar becomes two rows (brand, Install, language / links, theme), every
+   control gets a 44px touch target and wide mono lines scroll inside their own box. */
+@media (max-width: 720px) {
+  .ps-bar { padding: var(--sp-1) var(--sp-4) !important; gap: 0 var(--sp-3) !important; }
+  .ps-bar > .pirep-wordmark { margin-right: auto; }
+  .ps-nav { order: 5; flex: 1 1 calc(100% - 132px) !important; flex-wrap: nowrap !important; gap: var(--sp-4) !important; overflow-x: auto; scrollbar-width: none; }
+  .ps-nav::-webkit-scrollbar { display: none; }
+  .ps-nav > a { min-height: 44px; display: inline-flex !important; align-items: center; }
+  .ps-theme { order: 6; }
+  .ps-cta, .ps-lang, .ps-theme { height: 44px !important; }
+  .ps-lang > *, .ps-theme > * { font-size: 12px !important; padding: 0 var(--sp-3) !important; }
+  .ps-theme > * { padding: 0 var(--sp-2) !important; }
+  [style*="max-width: 1120px"] { padding-left: var(--sp-4) !important; padding-right: var(--sp-4) !important; }
+  #top > div { padding-top: var(--sp-8) !important; padding-bottom: var(--sp-8) !important; }
+  div:has(> .gn-mono[style*="white-space: pre"]) { overflow-x: auto; }
+  .gn-copy { height: 44px !important; }
+}
+</style>
 </head>
 <body>
 <div id="dc-root"><div class="sc-host" ><div  style="background: var(--bg); color: var(--text); font-family: var(--font-sans); min-height: 100vh;">
 
   <div  style="position: sticky; top: 0px; z-index: 60; background: var(--bg); border-bottom: 1px solid var(--line);">
-    <div  style="max-width: 1120px; margin: 0px auto; padding: 8px 28px; min-height: 54px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+    <div class="ps-bar"  style="max-width: 1120px; margin: 0px auto; padding: 8px 28px; min-height: 54px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
       <a  href="./index.html" class="pirep-wordmark pirep-wordmark--lg" data-product="pirep" style="flex: 0 0 auto;">pirep<i></i></a>
-      <div  style="flex: 1 1 0%; min-width: 0px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+      <div class="ps-nav"  style="flex: 1 1 0%; min-width: 0px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
         <a href="./get-started.html" class="gn-navlink" style="font-size: 13px; white-space: nowrap;"><span class="l-en">Getting started</span><span class="l-ko">시작하기</span></a>
         <a  href="./docs.html" class="gn-navlink" style="font-size: 13px; white-space: nowrap;"><span class="l-en">Docs</span><span class="l-ko">문서</span></a>
         <a  href="./changelog.html" class="gn-navlink" style="font-size: 13px; white-space: nowrap;"><span class="l-en">Changelog</span><span class="l-ko">업데이트 기록</span></a>
         <span  class="gn-sep"></span>
         <a  href="https://github.com/garamnohhh/pirep" style="font-size: 13px; color: var(--text-3); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;"><span  style="display: inline-flex; align-items: center; gap: 6px;"><svg viewBox="0 0 16 16" width="15" height="15" role="img" aria-label="GitHub" focusable="false" style="fill: currentColor; display: block;"><title>GitHub</title><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></span></a>
       </div>
-      <div  style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;">
-        <a href="./changelog.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="ko">KO</a>
+      <div class="ps-lang"  style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;">
+        <a class="ps-lang" href="./changelog.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="ko">KO</a>
         <a href="./en/changelog.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="en" data-active>EN</a>
       </div>
-      <div  style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;" data-gn-toggle="theme">
+      <div class="ps-theme"  style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;" data-gn-toggle="theme">
         <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-gn-opt-theme="light" role="tab" tabindex="0">LIGHT</span>
         <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-gn-opt-theme="dark" role="tab" tabindex="0">DARK</span>
       </div>
