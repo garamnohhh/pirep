@@ -82,18 +82,24 @@ img[src*="assets/"] { border: 1px solid var(--line); }
 html[data-lang="ko"] .l-en, html:not([data-lang="ko"]) .l-ko { display: none; }
 </style>
 <style>
-/* Phones: the bar becomes two rows (brand, Install, language / links, theme), every
-   control gets a 44px touch target and wide mono lines scroll inside their own box. */
+/* Phones: row one is brand, Download, one language button and one sun/moon button;
+   row two is the page links. Controls look small but keep a 44px touch target, and
+   wide mono lines scroll inside their own box. */
 @media (max-width: 720px) {
-  .ps-bar { padding: var(--sp-1) var(--sp-4) !important; gap: 0 var(--sp-3) !important; }
+  .ps-bar { padding: 0 var(--sp-4) !important; gap: 0 var(--sp-1) !important; }
   .ps-bar > .pirep-wordmark { margin-right: auto; }
-  .ps-nav { order: 5; flex: 1 1 calc(100% - 132px) !important; flex-wrap: nowrap !important; gap: var(--sp-4) !important; overflow-x: auto; scrollbar-width: none; }
+  .ps-nav { order: 5; flex: 1 1 100% !important; flex-wrap: nowrap !important; gap: var(--sp-4) !important; overflow-x: auto; scrollbar-width: none; }
   .ps-nav::-webkit-scrollbar { display: none; }
   .ps-nav > a { min-height: 44px; display: inline-flex !important; align-items: center; }
-  .ps-theme { order: 6; }
-  .ps-cta, .ps-lang, .ps-theme { height: 44px !important; }
-  .ps-lang > *, .ps-theme > * { font-size: 12px !important; padding: 0 var(--sp-3) !important; }
-  .ps-theme > * { padding: 0 var(--sp-2) !important; }
+  .ps-cta { position: relative; height: 28px !important; padding: 0 var(--sp-3) !important; font-size: 12px !important; margin-right: var(--sp-1); }
+  .ps-cta::after { content: ""; position: absolute; inset: -8px 0; }
+  .ps-lang, .ps-theme { height: 44px !important; border: 0 !important; }
+  .ps-lang > [data-active], .ps-theme > [aria-selected="true"] { display: none !important; }
+  .ps-lang > a { min-width: 44px; justify-content: center; padding: 0 !important; font-size: 12px !important; color: var(--text-2); }
+  .ps-theme > * { width: 44px; justify-content: center; padding: 0 !important; font-size: 0 !important; color: var(--text-2); }
+  .ps-theme > *::before { content: ""; width: 18px; height: 18px; background: currentColor; -webkit-mask: var(--ps-icon) center / contain no-repeat; mask: var(--ps-icon) center / contain no-repeat; }
+  .ps-theme > [data-gn-opt-theme="dark"] { --ps-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z'/%3E%3C/svg%3E"); }
+  .ps-theme > [data-gn-opt-theme="light"] { --ps-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4'/%3E%3C/svg%3E"); }
   [style*="max-width: 1120px"] { padding-left: var(--sp-4) !important; padding-right: var(--sp-4) !important; }
   #top > div { padding-top: var(--sp-8) !important; padding-bottom: var(--sp-8) !important; }
   div:has(> .gn-mono[style*="white-space: pre"]) { overflow-x: auto; }
@@ -116,12 +122,12 @@ html[data-lang="ko"] .l-en, html:not([data-lang="ko"]) .l-ko { display: none; }
       </div>
       <a class="ps-cta" href="./index.html#get" style="height: 26px; display: flex; align-items: center; padding: 0px 12px; flex: 0 0 auto; background: var(--accent); color: var(--on-accent); font-size: 12.5px; font-weight: 500;"><span class="l-en">Download</span><span class="l-ko">받기</span></a>
       <div class="ps-lang"  style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;">
-        <a href="./changelog.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="ko">KO</a>
-        <a href="./en/changelog.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="en" data-active>EN</a>
+        <a href="./changelog.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="ko" aria-label="한국어로 보기">KO</a>
+        <a href="./en/changelog.html" style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-site-lang="en" aria-label="View in English" data-active>EN</a>
       </div>
       <div class="ps-theme"  style="display: flex; height: 26px; border: 1px solid var(--line); flex: 0 0 auto;" data-gn-toggle="theme">
-        <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-gn-opt-theme="light" role="tab" tabindex="0">LIGHT</span>
-        <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-gn-opt-theme="dark" role="tab" tabindex="0">DARK</span>
+        <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-gn-opt-theme="light" aria-label="Switch to light" role="tab" tabindex="0">LIGHT</span>
+        <span style="font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; display: flex; align-items: center; padding: 0px 9px; cursor: pointer;" data-gn-opt-theme="dark" aria-label="Switch to dark" role="tab" tabindex="0">DARK</span>
       </div>
     </div>
   </div>
