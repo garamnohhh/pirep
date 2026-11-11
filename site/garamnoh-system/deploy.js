@@ -328,6 +328,10 @@
         var box = n.nav;
         if (box.scrollHeight > box.clientHeight + 1)
           box.scrollTop = Math.max(0, Math.min(box.scrollHeight - box.clientHeight, cur.a.offsetTop - box.offsetTop - (box.clientHeight - cur.a.offsetHeight) / 2));
+        if (box.scrollWidth > box.clientWidth + 1) {
+          var br = box.getBoundingClientRect(), ar = cur.a.getBoundingClientRect();
+          box.scrollLeft += ar.left - br.left - (br.width - ar.width) / 2;
+        }
       });
     }
     function soon() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }

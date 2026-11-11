@@ -229,6 +229,22 @@
                    border-bottom-color: var(--accent); }
 }
 
+/* --chips: a long nav (a docs page with 15+ entries) on a narrow screen stays one
+   scrolling row instead of wrapping over the first screen. Each entry is a bordered
+   chip with a gap wider than a word space, the current one is marked, and the row
+   ends on a cut chip so there is visibly more to the right. */
+@media (max-width: 900px) {
+  .gn-page-nav.gn-page-nav--chips { position: static; flex-direction: row; flex-wrap: nowrap;
+                 gap: var(--sp-2); padding: var(--sp-2) 0; overflow-x: auto; overflow-y: hidden;
+                 scrollbar-width: none; border-left: 0; border-bottom: var(--bw) solid var(--line); }
+  .gn-page-nav.gn-page-nav--chips::-webkit-scrollbar { display: none; }
+  .gn-page-nav.gn-page-nav--chips a { flex: none; white-space: nowrap; margin: 0;
+                 min-height: 44px; display: inline-flex; align-items: center;
+                 padding: 0 var(--sp-3); border: var(--bw) solid var(--line); }
+  .gn-page-nav.gn-page-nav--chips a[aria-current="true"] { color: var(--text);
+                 border-color: var(--accent); background: var(--sel-bg, var(--bg-2)); }
+}
+
 /* ----------------------------------------------------------------- PANELS
    Landing furniture. A documentation page is a column you read top to bottom;
    a landing is a sequence of full-height statements. Same tokens, different
