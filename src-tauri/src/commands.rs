@@ -231,20 +231,30 @@ fn trash_vault_item_at(root: &Path, rel_path: &str) -> Result<(), String> {
     trash::delete(path).map_err(|e| e.to_string())
 }
 
-/// Split watcher paths into "needs a full markdown rescan" vs "only the non-md
-/// file listing changed". Extensionless dirs and removed paths can hide changed
-/// markdown descendants. Skips .pirep, hidden dirs, .DS_Store and volatile sidecars.
-fn classify_paths(paths: &[PathBuf], root: &Path, pirep: &std::path::Path) -> (bool, bool, Vec<String>) {
+/// Files that come and go on their own: database sidecars, logs, partial
+/// downloads, and the temp file of an atomic save ("claude.json.tmp.22483.6f61",
+/// renamed over the real file a moment later). Listing them made rows and
+/// folder counts appear and vanish between two refreshes.
+fn is_volatile(p: &Path) -> bool {
     const VOLATILE: &[&str] = &[
         "db", "db-shm", "db-wal", "sqlite", "sqlite3", "log", "tmp", "temp", "swp", "lock",
         "part", "crdownload",
     ];
+    let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("");
+    let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    VOLATILE.contains(&ext) || name.contains(".tmp.") || name.ends_with('~')
+}
+
+/// Split watcher paths into "needs a full markdown rescan" vs "only the non-md
+/// file listing changed". Extensionless dirs and removed paths can hide changed
+/// markdown descendants. Skips .pirep, hidden dirs, .DS_Store and volatile sidecars.
+fn classify_paths(paths: &[PathBuf], root: &Path, pirep: &std::path::Path) -> (bool, bool, Vec<String>) {
     let (mut md, mut other) = (false, false);
     let mut relative = std::collections::BTreeSet::new();
     for p in paths {
         let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("");
         let visible = !p.starts_with(pirep)
-            && !VOLATILE.contains(&ext)
+            && !is_volatile(p)
             && p.file_name().map(|n| n != ".DS_Store").unwrap_or(true)
             && !p.components().any(|c| {
                 c.as_os_str()
@@ -444,7 +454,7 @@ pub fn list_files(state: State<VaultState>) -> Result<Vec<String>, String> {
         if p.extension().and_then(|e| e.to_str()).is_some_and(|e| {
             e.eq_ignore_ascii_case("md") || e.eq_ignore_ascii_case("markdown")
         }) { continue }
-        if p.file_name().map(|n| n == ".DS_Store").unwrap_or(false) { continue }
+        if p.file_name().map(|n| n == ".DS_Store").unwrap_or(false) || is_volatile(p) { continue }
         if let Ok(rel) = p.strip_prefix(&root) {
             if let Some(s) = rel.to_str() {
                 files.push(s.to_string());
@@ -604,7 +614,7 @@ mod tests {
         // both in one event
         assert_eq!(classify_paths(&[p("a.md"), p("b.csv")], &root, &pirep), (true, true, vec!["a.md".into(), "b.csv".into()]));
         // volatile sidecars / snapshots / hidden dirs / .DS_Store → nothing
-        for noisy in ["bus.db-shm", "bus.db-wal", "app.log", "x.tmp", ".DS_Store"] {
+        for noisy in ["bus.db-shm", "bus.db-wal", "app.log", "x.tmp", ".DS_Store", "mcp/claude.json.tmp.22483.6f6161cafdd7", "notes/a.md~"] {
             assert_eq!(classify_paths(&[p(noisy)], &root, &pirep), (false, false, vec![]), "{noisy}");
         }
         assert_eq!(classify_paths(&[pirep.join("snapshots/x.md")], &root, &pirep), (false, false, vec![]));
