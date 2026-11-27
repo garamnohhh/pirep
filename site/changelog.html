@@ -143,9 +143,23 @@ html[data-lang="ko"] .l-en, html:not([data-lang="ko"]) .l-ko { display: none; }
 
         <div >
           <div  style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; flex-wrap: wrap;">
+            <span  class="gn-mono" style="font-size: 22px; letter-spacing: -0.01em; color: var(--text);"><span class="sc-interp">0.2.11</span></span>
+            <span  class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="sc-interp">2026.11.27</span></span>
+            <span  style="display: inline-block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; color: var(--accent-text); border: 1px solid var(--accent-text); padding: 1px 5px;"><span class="sc-interp">LATEST</span></span>
+          </div>
+          <p  style="font-size: 15px; line-height: 1.8; color: var(--text-2); margin: 0px 0px 24px; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">A stray binary file named .md no longer stops pirep from opening the Base.</span><span class="l-ko">이름만 .md 인 바이너리 파일이 있어도 Base 가 열려요.</span></span></p>
+          <div  style="border-top: 1px solid var(--line); padding: 18px 0px 4px;">
+            <span  class="gn-mono" style="font-size: 11px; letter-spacing: 0.14em; color: var(--text-3);"><span class="sc-interp">FIXED</span></span>
+            <div  style="display: flex; flex-direction: column; margin-top: 12px;">
+              <div  style="display: flex; gap: 14px; align-items: flex-start; padding: 9px 0px;"><span class="gn-mono" style="font-size: 10px; color: var(--accent-text); flex: 0 0 auto; width: 9px; padding-top: 5px;"><span class="sc-interp">+</span></span><span style="flex: 1 1 0%; min-width: 0px; font-size: 14px; line-height: 1.7; color: var(--text-2); text-wrap: pretty;"><span class="sc-interp"><span class="l-en">If the Base held a Markdown file that was not valid UTF-8 (such as the <span class="gn-mono">._CHANGELOG.md</span> metadata files macOS leaves in <span class="gn-mono">__MACOSX</span> folders), the whole window showed only “stream did not contain valid UTF-8”. pirep now skips those files and opens everything else.</span><span class="l-ko">Base 안에 UTF-8 이 아닌 Markdown 파일(macOS 가 <span class="gn-mono">__MACOSX</span> 폴더에 남기는 <span class="gn-mono">._CHANGELOG.md</span> 같은 파일)이 있으면 창 전체에 “stream did not contain valid UTF-8” 만 보였어요. 이제 그런 파일은 건너뛰고 나머지를 열어요.</span></span></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div >
+          <div  style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; flex-wrap: wrap;">
             <span  class="gn-mono" style="font-size: 22px; letter-spacing: -0.01em; color: var(--text);"><span class="sc-interp">0.2.10</span></span>
             <span  class="gn-mono" style="font-size: 11px; color: var(--text-3);"><span class="sc-interp">2026.11.18</span></span>
-            <span  style="display: inline-block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; color: var(--accent-text); border: 1px solid var(--accent-text); padding: 1px 5px;"><span class="sc-interp">LATEST</span></span>
           </div>
           <p  style="font-size: 15px; line-height: 1.8; color: var(--text-2); margin: 0px 0px 24px; text-wrap: pretty;"><span class="sc-interp"><span class="l-en">The Files list no longer flickers while other apps save into the Base.</span><span class="l-ko">다른 앱이 Base 에 저장하는 동안 Files 목록이 깜빡이지 않아요.</span></span></p>
           <div  style="border-top: 1px solid var(--line); padding: 18px 0px 4px;">
