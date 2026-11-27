@@ -111,6 +111,7 @@ pub fn scan(root: &Path) -> Result<Db, String> {
         name == ".pirep"
             || name == "node_modules"
             || name == "target"
+            || name == "__MACOSX"
             || (name.starts_with('.') && name.len() > 1)
     };
     for entry in WalkDir::new(root)
@@ -119,7 +120,9 @@ pub fn scan(root: &Path) -> Result<Db, String> {
         .filter_map(|e| e.ok())
     {
         let p = entry.path();
-        if !p.is_file() || p.starts_with(&pirep) {
+        // "._name.md" is macOS AppleDouble metadata, binary despite its name
+        let hidden = entry.file_name().to_str().is_some_and(|n| n.starts_with('.'));
+        if !p.is_file() || p.starts_with(&pirep) || hidden {
             continue;
         }
         if !p.extension().and_then(|e| e.to_str()).is_some_and(|e| {
@@ -130,7 +133,10 @@ pub fn scan(root: &Path) -> Result<Db, String> {
 
         let (doc_id, path) = rel_doc_id(root, p)?;
         found.insert(doc_id.clone());
-        let content = std::fs::read_to_string(p).map_err(|e| e.to_string())?;
+        // One unreadable or non-UTF-8 file must not fail the whole Base: the
+        // scan error used to replace the app with "stream did not contain
+        // valid UTF-8". It stays in `found`, so a known doc keeps its history.
+        let Ok(content) = std::fs::read_to_string(p) else { continue };
         let h = hash::sha256_hex(&content);
 
         let (fm_pinned, fm_tags) = parse_frontmatter(&content);
@@ -495,6 +501,18 @@ mod tests {
         assert!(r.ops.iter().any(|o| o.op == "ins" && o.text.contains("rust")));
 
         std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn scan_skips_binary_and_non_utf8_markdown() {
+        let root = temp_vault();
+        std::fs::write(root.join("note.md"), "# 노트\n한글").unwrap();
+        std::fs::create_dir_all(root.join("x/__MACOSX")).unwrap();
+        std::fs::write(root.join("x/__MACOSX/a.md"), b"\x00\x05\x16\x07\xb0").unwrap();
+        std::fs::write(root.join("x/._CHANGELOG.md"), b"\x00\x05\x16\x07\xb0").unwrap();
+        std::fs::write(root.join("x/latin1.md"), b"caf\xe9").unwrap();
+        let db = scan(&root).unwrap();
+        assert_eq!(db.docs.keys().collect::<Vec<_>>(), vec!["note.md"]);
     }
 
     #[test]
